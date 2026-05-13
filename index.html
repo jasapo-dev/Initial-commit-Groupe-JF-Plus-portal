@@ -8,7 +8,34 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" crossorigin>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+/* Inline icon replacements - no external dependency */
+.ti{display:inline-flex;align-items:center;justify-content:center;width:1em;height:1em;vertical-align:middle}
+.ti::before{content:'';display:block}
+.ti-refresh::before{content:'↻';font-size:1.1em}
+.ti-bell::before{content:'🔔';font-size:.85em}
+.ti-plus::before{content:'+';font-weight:700;font-size:1.1em}
+.ti-search::before{content:'⌕';font-size:1.1em}
+.ti-layout-grid::before{content:'⊞';font-size:1em}
+.ti-map-pin::before{content:'📍';font-size:.85em}
+.ti-file-type-pdf::before{content:'📄';font-size:.85em}
+.ti-table-export::before{content:'📊';font-size:.85em}
+.ti-package-off::before{content:'📦';font-size:.85em}
+.ti-edit::before{content:'✏️';font-size:.85em}
+.ti-trash::before{content:'🗑';font-size:.85em}
+.ti-check::before{content:'✓';font-weight:700;font-size:1.1em}
+.ti-external-link::before{content:'↗';font-size:1em}
+.ti-database::before{content:'🗄';font-size:.85em}
+.ti-user::before{content:'👤';font-size:.85em}
+.ti-mail::before{content:'✉';font-size:1em}
+.ti-download::before{content:'↓';font-weight:700;font-size:1.1em}
+.ti-list-search::before{content:'🔍';font-size:.85em}
+.ti-shield-check::before{content:'🛡';font-size:.85em}
+.ti-eye::before{content:'👁';font-size:.85em}
+.ti-login::before{content:'→';font-weight:700;font-size:1.1em}
+.ti-logout::before{content:'←';font-weight:700;font-size:1.1em}
+.ti-bell-ringing::before{content:'🔔';font-size:.85em}
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
@@ -229,7 +256,8 @@ select.filter option{background:var(--bg2)}
 <!-- NAVBAR -->
 <nav class="navbar">
   <div class="nav-left">
-    <img class="nav-logo" src="https://ramassagededebris.com/wp-content/uploads/2022/12/logo-nav-2x.png" alt="Groupe JF Plus" onerror="this.style.display='none'">
+    <img class="nav-logo" src="https://ramassagededebris.com/wp-content/uploads/2022/12/logo-nav-2x.png" alt="Groupe JF Plus" 
+  onerror="this.outerHTML='<div style='display:flex;align-items:center;gap:8px'><div style='width:32px;height:32px;background:var(--green);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;font-family:var(--font)'>JF</div><span style='color:#fff;font-size:13px;font-weight:600'>Groupe JF Plus</span></div>'">
     <div class="nav-divider"></div>
     <span class="nav-title" id="nav-title">Gestion des conteneurs</span>
   </div>
