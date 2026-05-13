@@ -920,26 +920,12 @@ function exportCSV(filter){
   closePanel();
 }
 
-// ── GOOGLE MAPS SCRIPT LOADER ─────────────────────────────────────────────────
-function loadGoogleMaps(){
-  if(window.google)return;
-  const s=document.createElement('script');
-  s.src='https://maps.googleapis.com/maps/api/js?key='+GMAPS_KEY+'&libraries=places&callback=initPlacesAutocomplete';
-  s.async=true;s.defer=true;
-  document.head.appendChild(s);
-}
-
 // ── INIT ──────────────────────────────────────────────────────────────────────
 applyLang();loadAll();
 setInterval(()=>{loadAll();checkOverdue();},30000);
 </script>
 
 <!-- Load Google Maps lazily when Add button is first clicked -->
-<script>
-(function(){
-  const orig=window.openAdd;
-  window.openAdd=function(){
-    loadGoogleMaps();
     // Give maps script a moment to load, then open modal
     setTimeout(function(){
       if(typeof orig==='function')orig();
