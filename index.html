@@ -627,42 +627,54 @@ function selectClient(i,name){
 // ── GOOGLE PLACES AUTOCOMPLETE ────────────────────────────────────────────────
 function initPlacesAutocomplete(){
   var input=document.getElementById('mAddress');
-  if(!input||input._acSetup)return;
-  input._acSetup=true;
-  var list=document.createElement('div');
-  list.className='autocomplete-list';
-  list.style.cssText='position:absolute;top:100%;left:0;right:0;z-index:99999;display:none;max-height:220px;overflow-y:auto;background:#1a2840;border:1px solid rgba(79,168,79,0.4);border-radius:8px;margin-top:2px;box-shadow:0 8px 32px rgba(0,0,0,0.6)';
+  if(!input||input._done)return;
+  input._done=true;
+
+  // Create dropdown
+  var box=document.createElement('div');
+  box.id='addr-drop';
+  box.style.cssText='position:absolute;left:0;right:0;top:100%;z-index:999999;background:#1a2840;border:1px solid #4fa84f;border-radius:8px;margin-top:3px;max-height:240px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.7);display:none';
   input.parentNode.style.position='relative';
-  input.parentNode.appendChild(list);
-  var timer=null;
+  input.parentNode.appendChild(box);
+
+  var debounce=null;
   input.addEventListener('input',function(){
-    clearTimeout(timer);
-    var q=this.value.trim();
-    if(q.length<3){list.style.display='none';return;}
-    timer=setTimeout(function(){
-      fetch('https://nominatim.openstreetmap.org/search?format=json&limit=6&addressdetails=1&countrycodes=ca,us&q='+encodeURIComponent(q),{
-        headers:{'Accept-Language':lang==='fr'?'fr':'en','User-Agent':'GroupeJFPlus/1.0'}
-      })
-      .then(function(r){return r.json();})
-      .then(function(results){
-        if(!results.length){list.style.display='none';return;}
-        list.innerHTML=results.map(function(r){
-          return '<div class="autocomplete-item" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(79,168,79,0.12);font-size:13px;color:#e2f0e2;transition:background .1s" '+
-            'onmouseover="this.style.background='rgba(79,168,79,0.15)'" '+
-            'onmouseout="this.style.background=''" '+
-            'onclick="selectAddr(this,''+r.display_name.replace(/'/g,"\'")+'')">'
-            +r.display_name+'</div>';
-        }).join('');
-        list.style.display='block';
-      })
-      .catch(function(){list.style.display='none';});
-    },400);
+    var q=input.value.trim();
+    clearTimeout(debounce);
+    box.style.display='none';
+    if(q.length<3)return;
+    debounce=setTimeout(function(){
+      var url='https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=ca,us&q='+encodeURIComponent(q);
+      fetch(url,{headers:{'Accept':'application/json'}})
+        .then(function(r){return r.json();})
+        .then(function(data){
+          if(!data||!data.length){box.style.display='none';return;}
+          box.innerHTML='';
+          data.forEach(function(item){
+            var d=document.createElement('div');
+            d.textContent=item.display_name;
+            d.style.cssText='padding:10px 14px;cursor:pointer;color:#e2f0e2;font-size:13px;border-bottom:1px solid rgba(79,168,79,0.15)';
+            d.addEventListener('mouseenter',function(){d.style.background='rgba(79,168,79,0.2)';d.style.color='#6bc46b';});
+            d.addEventListener('mouseleave',function(){d.style.background='';d.style.color='#e2f0e2';});
+            d.addEventListener('mousedown',function(e){
+              e.preventDefault();
+              input.value=item.display_name;
+              box.style.display='none';
+            });
+            box.appendChild(d);
+          });
+          box.style.display='block';
+        })
+        .catch(function(e){console.log('Autocomplete error:',e);});
+    },500);
   });
+
   document.addEventListener('click',function(e){
-    if(!input.contains(e.target)&&!list.contains(e.target))list.style.display='none';
+    if(e.target!==input&&!box.contains(e.target)){box.style.display='none';}
   });
   input.addEventListener('keydown',function(e){if(e.key==='Enter')e.preventDefault();});
 }
+function selectAddr(){}
 function selectAddr(el,addr){
   var input=document.getElementById('mAddress');
   if(input)input.value=addr;
