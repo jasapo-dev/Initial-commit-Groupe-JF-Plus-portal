@@ -429,7 +429,7 @@ function setDbStatus(ok,key){document.getElementById('dbDot').className='db-dot'
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 async function doLogin(){
-  if(locked()){showLock();return;}
+  // rate limiter disabled
   const email=document.getElementById('loginEmail').value.trim();
   const password=document.getElementById('loginPassword').value;
   const btn=document.getElementById('loginBtn');
