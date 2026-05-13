@@ -2,10 +2,12 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Groupe JF Plus — Gestion des Conteneurs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -240,8 +242,8 @@ select.filter option{background:var(--bg2)}
       <span class="db-dot connecting" id="db-dot"></span>
       <span style="font-size:11px;color:var(--text3)" id="db-label">...</span>
     </div>
-    <button class="icon-btn" onclick="loadAll()" title="Actualiser"><i class="ti ti-refresh"></i></button>
-    <button class="icon-btn" onclick="openPanel()" title="Rapports & Alertes"><i class="ti ti-bell"></i></button>
+    <button class="icon-btn" onclick="loadAll()" title="Actualiser" aria-label="Actualiser"><i class="ti ti-refresh"></i></button>
+    <button class="icon-btn" onclick="openPanel()" title="Rapports & Alertes" aria-label="Rapports et Alertes"><i class="ti ti-bell"></i></button>
     <span class="nav-count" id="nav-count"></span>
     <button class="nav-btn primary" id="btn-add" onclick="openAdd()">
       <i class="ti ti-plus" style="font-size:14px"></i>
@@ -291,8 +293,8 @@ select.filter option{background:var(--bg2)}
       <option value="overdue" id="opt-sort-over"></option>
     </select>
     <div class="toolbar-sep"></div>
-    <button class="icon-btn" onclick="exportPDF('all')" title="Export PDF"><i class="ti ti-file-type-pdf"></i></button>
-    <button class="icon-btn" onclick="exportCSV('all')" title="Export CSV"><i class="ti ti-table-export"></i></button>
+    <button class="icon-btn" onclick="exportPDF('all')" title="Export PDF" aria-label="Export PDF"><i class="ti ti-file-type-pdf"></i></button>
+    <button class="icon-btn" onclick="exportCSV('all')" title="Export CSV" aria-label="Export CSV"><i class="ti ti-table-export"></i></button>
   </div>
 
   <!-- LIST VIEW -->
@@ -398,6 +400,7 @@ const t=()=>T[lang];
 
 // ── LANG ─────────────────────────────────────────────────────────────────────
 function setLang(l){
+  document.documentElement.lang=l;
   lang=l;localStorage.setItem('jf_lang',l);
   document.getElementById('btn-fr').className='lang-btn'+(l==='fr'?' active':'');
   document.getElementById('btn-en').className='lang-btn'+(l==='en'?' active':'');
@@ -697,10 +700,10 @@ function buildModal(c,mode){
         (isNew?
           '<div class="field"><label>'+x.fId+'</label><input id="mId" placeholder="'+x.fIdPh+'" maxlength="20"></div>'+
           '<div class="field-row">'+
-            '<div class="field"><label>'+x.fSize+'</label><select id="mSize"><option>7V</option><option>10V</option><option>15V</option><option>20V</option><option>25V (BOX)</option></select></div>'+
-            '<div class="field"><label>'+x.fColor+'</label><select id="mColor"><option>GREEN</option><option>BLUE</option><option>BLACK</option><option>RED</option></select></div>'+
+            '<div class="field"><label for="mSize">'+x.fSize+'</label><select id="mSize"><option>7V</option><option>10V</option><option>15V</option><option>20V</option><option>25V (BOX)</option></select></div>'+
+            '<div class="field"><label for="mColor">'+x.fColor+'</label><select id="mColor"><option>GREEN</option><option>BLUE</option><option>BLACK</option><option>RED</option></select></div>'+
           '</div>':'')+
-        '<div class="field"><label>'+x.fStatus+'</label>'+
+        '<div class="field"><label for="mStatus">'+x.fStatus+'</label>'+
           '<select id="mStatus" onchange="toggleRented()">'+
             '<option value="Available"'+(c.status==='Available'?' selected':'')+'>'+x.sl.Available+'</option>'+
             '<option value="Rented"'+(c.status==='Rented'?' selected':'')+'>'+x.sl.Rented+'</option>'+
@@ -715,13 +718,13 @@ function buildModal(c,mode){
             '<div id="client-list" class="autocomplete-list" style="display:none"></div>'+
           '</div>'+
           '<div class="field-row">'+
-            '<div class="field"><label>'+x.fPhone+'</label><input id="mPhone" value="'+san(c.phone||'')+'" maxlength="30"></div>'+
-            '<div class="field"><label>'+x.fRentDate+'</label><input type="date" id="mRentDate" value="'+san(c.rented_date||today)+'"></div>'+
+            '<div class="field"><label for="mPhone">'+x.fPhone+'</label><input id="mPhone" value="'+san(c.phone||'')+'" maxlength="30"></div>'+
+            '<div class="field"><label for="mRentDate">'+x.fRentDate+'</label><input type="date" id="mRentDate" value="'+san(c.rented_date||today)+'"></div>'+
           '</div>'+
-          '<div class="field"><label>'+x.fAddr+'</label><input id="mAddress" value="'+san(c.address||'')+'" placeholder="'+x.fAddrPh+'" maxlength="300" autocomplete="off"></div>'+
-          '<div class="field"><label>'+x.fReturn+'</label><input type="date" id="mReturn" value="'+san(c.return_date||'')+'"></div>'+
+          '<div class="field"><label for="mAddress">'+x.fAddr+'</label><input id="mAddress" value="'+san(c.address||'')+'" placeholder="'+x.fAddrPh+'" maxlength="300" autocomplete="off"></div>'+
+          '<div class="field"><label for="mReturn">'+x.fReturn+'</label><input type="date" id="mReturn" value="'+san(c.return_date||'')+'"></div>'+
         '</div>'+
-        '<div class="field"><label>'+x.fNotes+'</label><textarea id="mNotes" maxlength="500">'+san(c.notes||'')+'</textarea></div>'+
+        '<div class="field"><label for="mNotes">'+x.fNotes+'</label><textarea id="mNotes" maxlength="500">'+san(c.notes||'')+'</textarea></div>'+
         '<div style="height:8px"></div>'+
       '</div>'+
       '<div class="modal-foot">'+
@@ -954,4 +957,3 @@ setInterval(()=>{loadAll();checkOverdue();},30000);
 
 </body>
 </html>
-
