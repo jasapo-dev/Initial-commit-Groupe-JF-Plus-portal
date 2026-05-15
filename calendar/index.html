@@ -484,20 +484,27 @@ async function saveEvent(){
   const title=(document.getElementById('ev-title').value||'').trim();
   if(!title){toast(lang==='fr'?'Titre requis':'Title required','error');return;}
   const empId=document.getElementById('ev-employee').value;
+  const eventDate=document.getElementById('ev-date').value;
+  if(!eventDate){toast(lang==='fr'?'Date requise':'Date required','error');return;}
   const body={
     title,
-    event_date:document.getElementById('ev-date').value,
-    event_type:document.getElementById('ev-type').value,
-    employee_id:empId?parseInt(empId):null,
+    event_date:eventDate,
+    event_type:document.getElementById('ev-type').value||'note',
     client_name:document.getElementById('ev-client').value.trim()||null,
     address:document.getElementById('ev-address').value.trim()||null,
     notes:document.getElementById('ev-notes').value.trim()||null,
-    created_at:new Date().toISOString()
   };
+  // Only include employee_id if one is actually selected and employees exist
+  if(empId&&employees.length){
+    body.employee_id=parseInt(empId);
+  }
   try{
     await api('POST','events',body);
     toast(t.saved,'success');closeModal();await loadAll();
-  }catch(e){toast(t.err+e.message,'error',4000);}
+  }catch(e){
+    console.error('Save event error:',e);
+    toast(t.err+e.message,'error',5000);
+  }
 }
 
 async function deleteEvent(id){

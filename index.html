@@ -465,15 +465,15 @@ async function loadAll(){
   dbStatus('connecting');
   try{
     const [c,cl,inv,tx,ev]=await Promise.all([
-      api('containers?select=*'),
-      api('clients?select=*'),
-      api('invoices?select=*&order=created_at.desc&limit=20'),
-      api('transactions?select=*&order=triggered_at.desc'),
+      api('containers?select=*').catch(()=>[]),
+      api('clients?select=*').catch(()=>[]),
+      api('invoices?select=*&order=created_at.desc&limit=20').catch(()=>[]),
+      api('transactions?select=*&order=triggered_at.desc').catch(()=>[]),
       api('events?select=*&order=event_date.asc').catch(()=>[]),
     ]);
     containers=c||[];clients=cl||[];invoices=inv||[];transactions=tx||[];events=ev||[];
     dbStatus('online');renderAll();
-  }catch(e){dbStatus('offline');toast('Connection error','error');}
+  }catch(e){dbStatus('offline');toast('Connection error: '+e.message,'error');}
 }
 
 function renderAll(){
