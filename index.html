@@ -797,7 +797,6 @@ function buildModal(c,mode){
             '<div class="field"><label for="mReturn">'+x.fReturn+'</label><input type="date" id="mReturn" value="'+san(defaultReturnStr)+'"></div>'+
           '</div>'+
           '<div class="field"><label for="mAddress">'+x.fAddr+'</label><input id="mAddress" value="'+san(c.address||'')+'" placeholder="'+x.fAddrPh+'" maxlength="300" autocomplete="off"></div>'+
-          '<div class="field"><label for="mReturn">'+x.fReturn+'</label><input type="date" id="mReturn" value="'+san(c.return_date||defaultReturnStr)+'"></div>'+
         '</div>'+
         '<div class="field"><label for="mNotes">'+x.fNotes+'</label><textarea id="mNotes" maxlength="500">'+san(c.notes||'')+'</textarea></div>'+
         '<div style="height:8px"></div>'+
@@ -837,16 +836,20 @@ async function doSave(oldId){
   const status=document.getElementById('mStatus').value;
   const isNew=!editId;
   const btn=document.getElementById('saveBtn');
-  if(!['Available','Rented','Maintenance'].includes(status))return;
+  if(!['Available','Rented','Reservation','Maintenance'].includes(status)){toast('Statut invalide','error');return;}
   if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span>';}
-  const isRented=status==='Rented';
+  const needsClient=status==='Rented'||status==='Reservation';
+  const emailEl=document.getElementById('mEmail');
+  const resCatEl=document.getElementById('mResCat');
   const payload={
     status,
-    client:isRented?(document.getElementById('mClient').value||'').trim():'',
-    phone:isRented?(document.getElementById('mPhone').value||'').trim():'',
-    address:isRented?(document.getElementById('mAddress').value||'').trim():'',
-    rented_date:isRented?(document.getElementById('mRentDate').value||null):null,
-    return_date:isRented?(document.getElementById('mReturn').value||null):null,
+    client:needsClient?(document.getElementById('mClient').value||'').trim():'',
+    phone:needsClient?(document.getElementById('mPhone').value||'').trim():'',
+    email:needsClient&&emailEl?emailEl.value.trim():'',
+    address:needsClient?(document.getElementById('mAddress').value||'').trim():'',
+    rented_date:needsClient?(document.getElementById('mRentDate').value||null):null,
+    return_date:needsClient?(document.getElementById('mReturn').value||null):null,
+    reservation_category:status==='Reservation'&&resCatEl?resCatEl.value:null,
     notes:(document.getElementById('mNotes').value||'').trim(),
     updated_at:new Date().toISOString()
   };
@@ -860,12 +863,11 @@ async function doSave(oldId){
       payload.size=document.getElementById('mSize').value;
       payload.color=document.getElementById('mColor').value;
       await api('POST','containers',payload);
-      // Save/update client record if rented
-      if(isRentedOrRes&&payload.client)await saveClient(payload);
+      if(needsClient&&payload.client)await saveClient(payload);
       toast(x.added,'success');
     }else{
       await api('PATCH','containers?container_id=eq.'+encodeURIComponent(oldId),payload);
-      if(isRentedOrRes&&payload.client)await saveClient(payload);
+      if(needsClient&&payload.client)await saveClient(payload);
       toast(x.saved,'success');
     }
     closeModal();await loadAll();
