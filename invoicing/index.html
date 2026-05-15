@@ -224,9 +224,11 @@ td.mono{font-family:var(--mono);font-size:12px;color:var(--green3)}
     <span class="nav-title" id="nav-title">Invoicing</span>
   </div>
   <div class="nav-right">
-    <a href="../" class="nav-btn"><i class="ti ti-home"></i> <span id="lbl-back">Back office</span></a>
+    <a href="../" class="nav-btn"><i class="ti ti-home"></i> <span id="lbl-back">Home</span></a>
+    <a href="../container-tracking/" class="nav-btn"><span id="lbl-ct-nav">Containers</span></a>
     <a href="../clients/" class="nav-btn"><span id="lbl-clients-nav">Clients</span></a>
-    <a href="../tracker/" class="nav-btn"><span id="lbl-tracker-nav">Tracker</span></a>
+    <a href="../calendar/" class="nav-btn"><span id="lbl-cal-nav">Calendar</span></a>
+    <a href="../timesheets/" class="nav-btn"><span id="lbl-ts-nav">Timesheets</span></a>
     <div class="toolbar-sep"></div>
     <div class="lang-toggle">
       <button class="lang-btn" id="btn-fr" onclick="setLang('fr')">FR</button>
@@ -409,7 +411,7 @@ let lineCount=0;
 
 const T={
   en:{
-    navTitle:'Invoicing',back:'Back office',clientsNav:'Clients',trackerNav:'Tracker',
+    navTitle:'Invoicing',back:'Home',clientsNav:'Clients',ctNav:'Containers',calNav:'Calendar',tsNav:'Timesheets',
     newInv:'New Invoice',pendingTitle:'Pending Transactions',invTitle:'Invoice History',
     clientSec:'Client',itemsSec:'Line Items',adjSec:'Adjustments',
     invNum:'Invoice #',invDate:'Date',due:'Due Date',
@@ -430,7 +432,7 @@ const T={
     confirmCancel:'Cancel this invoice?',
   },
   fr:{
-    navTitle:'Facturation',back:'Retour',clientsNav:'Clients',trackerNav:'Suivi',
+    navTitle:'Facturation',back:'Accueil',clientsNav:'Clients',ctNav:'Conteneurs',calNav:'Calendrier',tsNav:'Feuilles de temps',
     newInv:'Nouvelle facture',pendingTitle:'Transactions en attente',invTitle:'Historique',
     clientSec:'Client',itemsSec:'Postes',adjSec:'Ajustements',
     invNum:'N° facture',invDate:'Date',due:'Échéance',
@@ -463,8 +465,10 @@ function applyLang(){
   const t=x();
   document.getElementById('nav-title').textContent=t.navTitle;
   document.getElementById('lbl-back').textContent=t.back;
+  document.getElementById('lbl-ct-nav').textContent=t.ctNav;
   document.getElementById('lbl-clients-nav').textContent=t.clientsNav;
-  document.getElementById('lbl-tracker-nav').textContent=t.trackerNav;
+  document.getElementById('lbl-cal-nav').textContent=t.calNav;
+  document.getElementById('lbl-ts-nav').textContent=t.tsNav;
   document.getElementById('lbl-new').textContent=t.newInv;
   document.getElementById('lbl-pending-title').textContent=t.pendingTitle;
   document.getElementById('lbl-inv-title').textContent=t.invTitle;
