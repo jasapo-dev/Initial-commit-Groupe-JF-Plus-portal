@@ -35,8 +35,18 @@
 .ti-login::before{content:'→';font-weight:700;font-size:1.1em}
 .ti-logout::before{content:'←';font-weight:700;font-size:1.1em}
 .ti-bell-ringing::before{content:'🔔';font-size:.85em}
+
+/* Google Places dropdown */
+.pac-container{background:#1a2840!important;border:1px solid rgba(79,168,79,0.4)!important;border-radius:8px!important;font-family:'Inter',sans-serif!important;box-shadow:0 8px 32px rgba(0,0,0,0.7)!important;margin-top:2px!important;z-index:999999!important}
+.pac-item{padding:10px 14px!important;color:#e2f0e2!important;border-top:1px solid rgba(79,168,79,0.12)!important;font-size:13px!important;cursor:pointer!important}
+.pac-item:hover,.pac-item-selected{background:rgba(79,168,79,0.15)!important;color:#6bc46b!important}
+.pac-item-query{color:#6bc46b!important;font-size:13px!important;font-weight:500!important}
+.pac-matched{color:#6bc46b!important;font-weight:600!important}
+.pac-icon{display:none!important}
+.pac-logo:after{display:none!important}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTXhNFj1REWyHjBpC4-qASfGRFjXlsGdQ&libraries=places" async defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -679,47 +689,26 @@ function selectClient(i,name){
 // ── GOOGLE PLACES AUTOCOMPLETE ────────────────────────────────────────────────
 function initPlacesAutocomplete(){
   var input=document.getElementById('mAddress');
-  if(!input||input._done)return;
-  input._done=true;
-  var box=document.createElement('div');
-  box.style.cssText='position:absolute;left:0;right:0;top:100%;z-index:999999;background:#1a2840;border:1px solid #4fa84f;border-radius:8px;margin-top:3px;max-height:240px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.7);display:none';
-  input.parentNode.style.position='relative';
-  input.parentNode.appendChild(box);
-  var debounce=null;
-  input.addEventListener('input',function(){
-    var q=input.value.trim();
-    clearTimeout(debounce);
-    box.style.display='none';
-    if(q.length<3)return;
-    debounce=setTimeout(function(){
-      fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=ca,us&q='+encodeURIComponent(q),{headers:{'Accept':'application/json'}})
-        .then(function(r){return r.json();})
-        .then(function(data){
-          if(!data||!data.length){box.style.display='none';return;}
-          box.innerHTML='';
-          data.forEach(function(item){
-            var d=document.createElement('div');
-            d.textContent=item.display_name;
-            d.style.cssText='padding:10px 14px;cursor:pointer;color:#e2f0e2;font-size:13px;border-bottom:1px solid rgba(79,168,79,0.15)';
-            d.addEventListener('mouseenter',function(){d.style.background='rgba(79,168,79,0.2)';d.style.color='#6bc46b';});
-            d.addEventListener('mouseleave',function(){d.style.background='';d.style.color='#e2f0e2';});
-            d.addEventListener('mousedown',function(e){
-              e.preventDefault();
-              input.value=item.display_name;
-              box.style.display='none';
-            });
-            box.appendChild(d);
-          });
-          box.style.display='block';
-        })
-        .catch(function(){box.style.display='none';});
-    },500);
+  if(!input||input._acDone)return;
+  if(!window.google||!window.google.maps||!window.google.maps.places){
+    setTimeout(initPlacesAutocomplete,300);return;
+  }
+  input._acDone=true;
+  google.maps.event.clearInstanceListeners(input);
+  var ac=new google.maps.places.Autocomplete(input,{
+    componentRestrictions:{country:['ca','us']},
+    fields:['formatted_address'],
+    types:['address']
   });
-  document.addEventListener('click',function(e){
-    if(e.target!==input&&!box.contains(e.target))box.style.display='none';
+  ac.addListener('place_changed',function(){
+    var p=ac.getPlace();
+    if(p&&p.formatted_address)input.value=p.formatted_address;
   });
-  input.addEventListener('keydown',function(e){if(e.key==='Enter')e.preventDefault();});
+  input.addEventListener('keydown',function(e){
+    if(e.key==='Enter')e.preventDefault();
+  },{once:true});
 }
+function selectAddr(){}
 function selectAddr(){}
 function selectAddr(){}
 function selectAddr(){}
