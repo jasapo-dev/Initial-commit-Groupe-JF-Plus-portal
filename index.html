@@ -484,10 +484,10 @@ function renderAll(){
 function renderStats(){
   const t=x();
   const total=containers.length;
-  const rented=containers.filter(c=>c.status==='Rented').length;
-  const avail=containers.filter(c=>c.status==='Available').length;
-  const pending=transactions.filter(tx=>tx.status==='pending').length;
-  const unpaid=invoices.filter(i=>i.status==='unpaid').length;
+  const rented=containers.filter(c=>(c.status||'').toLowerCase()==='rented').length;
+  const avail=containers.filter(c=>(c.status||'').toLowerCase()==='available').length;
+  const pending=transactions.filter(tx=>(tx.status||'').toLowerCase()==='pending').length;
+  const unpaid=invoices.filter(i=>(i.status||'').toLowerCase()==='unpaid').length;
   const totalClients=clients.length;
   document.getElementById('stats').innerHTML=
     `<div class="stat blue"><div class="stat-label">${t.statContainers}</div><div class="stat-val blue">${total}</div></div>`+
@@ -531,12 +531,11 @@ function renderSchedule(){
 
 function renderActivity(){
   const t=x();
-  // Build activity from recent invoice and container changes
   const recent=[];
   invoices.slice(0,5).forEach(i=>{
     recent.push({text:`Invoice ${san(i.invoice_number||'—')} — ${san(i.client_name||'—')} — ${fmtMoney(i.total||0)}`,time:i.created_at,color:'var(--green2)'});
   });
-  containers.filter(c=>c.status==='Rented').slice(0,5).forEach(c=>{
+  containers.filter(c=>(c.status||'').toLowerCase()==='rented').slice(0,5).forEach(c=>{
     recent.push({text:`Container ${san(c.container_id)} rented to ${san(c.client||'—')}`,time:c.updated_at||c.created_at,color:'var(--amber)'});
   });
   recent.sort((a,b)=>new Date(b.time)-new Date(a.time));
@@ -554,7 +553,7 @@ function renderActivity(){
 
 function renderPending(){
   const t=x();
-  const pending=transactions.filter(tx=>tx.status==='pending');
+  const pending=transactions.filter(tx=>(tx.status||'').toLowerCase()==='pending');
   const el=document.getElementById('pending-list');
   if(!pending.length){el.innerHTML=`<div class="empty-panel">${t.noPending}</div>`;return;}
   el.innerHTML=pending.slice(0,5).map(tx=>`
@@ -570,7 +569,7 @@ function renderPending(){
 
 function renderOverdue(){
   const t=x();
-  const overdue=containers.filter(c=>c.status==='Rented'&&c.return_date&&new Date(c.return_date)<new Date());
+  const overdue=containers.filter(c=>(c.status||'').toLowerCase()==='rented'&&c.return_date&&new Date(c.return_date)<new Date());
   const el=document.getElementById('overdue-list');
   if(!overdue.length){el.innerHTML=`<div class="empty-panel" style="color:var(--green3)">✓ ${t.noOverdue}</div>`;return;}
   el.innerHTML=overdue.map(c=>`
