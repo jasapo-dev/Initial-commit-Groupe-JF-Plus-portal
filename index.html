@@ -86,7 +86,7 @@ img{background:transparent}
 .body{padding:1.25rem 1.5rem;max-width:1280px;margin:0 auto}
 
 /* ── STATS ── */
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.25rem}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:1.25rem}
 .stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:14px 16px;position:relative;overflow:hidden;transition:border-color .15s}
 .stat:hover{border-color:var(--border2)}
 .stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
@@ -95,6 +95,7 @@ img{background:transparent}
 .stat.amber::before{background:var(--amber)}
 .stat.red::before{background:var(--red)}
 .stat.purple::before{background:var(--purple)}
+.stat.blue2::before{background:var(--blue)}
 .stat-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
 .stat-val{font-size:26px;font-weight:700;line-height:1;margin-bottom:2px}
 .stat-val.blue{color:var(--blue-text)}
@@ -102,6 +103,7 @@ img{background:transparent}
 .stat-val.amber{color:var(--amber-text)}
 .stat-val.red{color:var(--red-text)}
 .stat-val.purple{color:var(--purple-text)}
+.stat-val.blue2{color:var(--blue-text)}
 .stat-sub{font-size:11px;color:var(--text3)}
 
 /* ── TOOLBAR ── */
@@ -381,7 +383,7 @@ let containers=[],clients=[],lang=localStorage.getItem('jf_lang')||'fr',tab='lis
 const T={
   fr:{
     title:'Gestion des conteneurs',add:'Ajouter',refresh:'Actualiser',
-    stats:['Total','Disponibles','Loués','Maintenance','En retard'],
+    stats:['Total','Disponibles','Loués','Maintenance','En retard','Réservations'],
     tabList:'Conteneurs',tabMap:'Carte',
     search:'Rechercher ID, client, adresse...',
     allSize:'Toutes les tailles',allStatus:'Tous les statuts',
@@ -413,7 +415,7 @@ const T={
   },
   en:{
     title:'Container Management',add:'Add',refresh:'Refresh',
-    stats:['Total','Available','Rented','Maintenance','Overdue'],
+    stats:['Total','Available','Rented','Maintenance','Overdue','Reservations'],
     tabList:'Containers',tabMap:'Map',
     search:'Search ID, client, address...',
     allSize:'All sizes',allStatus:'All statuses',
@@ -534,10 +536,12 @@ function renderStats(){
   const ma=containers.filter(c=>c.status==='Maintenance').length;
   const od=containers.filter(isOverdue).length;
   document.getElementById('nav-count').textContent=total+' conteneurs';
+  const res=containers.filter(function(c){return c.status==='Reservation';}).length;
   document.getElementById('stats').innerHTML=
     stat('blue',x.stats[0],total,'')+
     stat('green',x.stats[1],av,'')+
     stat('amber',x.stats[2],re,'')+
+    stat('blue2',x.stats[5]||'Réservations',res,'')+
     stat('red',x.stats[3],ma,'')+
     stat('purple',x.stats[4],od,'');
 }
@@ -741,7 +745,9 @@ function openEdit(id){
 
 function buildModal(c,mode){
   const x=t(),isNew=mode==='new',today=new Date().toISOString().slice(0,10);
-  const rentDisplay=c.status==='Rented'?'block':'none';
+  const rentDisplay=(c.status==='Rented'||c.status==='Reservation')?'block':'none';
+  const defaultReturn=new Date();defaultReturn.setDate(defaultReturn.getDate()+7);
+  const defaultReturnStr=c.return_date||defaultReturn.toISOString().slice(0,10);
   document.getElementById('mc').innerHTML=
     '<div class="overlay" id="ov" onclick="if(event.target.id===\'ov\')closeModal()">'+
     '<div class="modal">'+
@@ -768,15 +774,15 @@ function buildModal(c,mode){
               '<option value="Maintenance"'+(c.status==='Maintenance'?' selected':'')+'>'+x.sl.Maintenance+'</option>'+
             '</select>'+
           '</div>'+
+        '</div>'+
+        '<div id="rentedFields" style="display:'+rentDisplay+'">'+
+          '<div class="section-sep"><i class="ti ti-user" style="font-size:12px"></i>'+x.clientSec+'</div>'+
           '<div class="field" id="resCatField" style="display:'+(c.status==='Reservation'?'block':'none')+'">'+
             '<label for="mResCat">'+x.fResCat+'</label>'+
             '<select id="mResCat">'+
               x.resCats.map(function(cat){return'<option value="'+cat+'"'+(c.reservation_category===cat?' selected':'')+'>'+cat+'</option>';}).join('')+
             '</select>'+
           '</div>'+
-        '</div>'+
-        '<div id="rentedFields" style="display:'+rentDisplay+'">'+
-          '<div class="section-sep"><i class="ti ti-user" style="font-size:12px"></i>'+x.clientSec+'</div>'+
           '<div class="field autocomplete-wrap">'+
             '<label>'+x.fClient+'</label>'+
             '<input id="mClient" value="'+san(c.client||'')+'" maxlength="200" autocomplete="off">'+
@@ -787,8 +793,8 @@ function buildModal(c,mode){
             '<div class="field"><label for="mEmail">'+x.fEmail+'</label><input type="email" id="mEmail" value="'+san(c.email||'')+'" maxlength="200"></div>'+
           '</div>'+
           '<div class="field-row">'+
-            '<div class="field"><label for="mRentDate">'+x.fRentDate+'</label><input type="date" id="mRentDate" value="'+san(c.rented_date||today)+'" onchange="autoSetReturn()"></div>'+
-            '<div class="field"><label for="mReturn">'+x.fReturn+'</label><input type="date" id="mReturn" value="'+san(c.return_date||defaultReturnStr)+'"></div>'+
+            '<div class="field"><label for="mRentDate">'+x.fRentDate+'</label><input type="date" id="mRentDate" value="'+san(c.rented_date||today)+'" oninput="autoSetReturn()"></div>'+
+            '<div class="field"><label for="mReturn">'+x.fReturn+'</label><input type="date" id="mReturn" value="'+san(defaultReturnStr)+'"></div>'+
           '</div>'+
           '<div class="field"><label for="mAddress">'+x.fAddr+'</label><input id="mAddress" value="'+san(c.address||'')+'" placeholder="'+x.fAddrPh+'" maxlength="300" autocomplete="off"></div>'+
           '<div class="field"><label for="mReturn">'+x.fReturn+'</label><input type="date" id="mReturn" value="'+san(c.return_date||defaultReturnStr)+'"></div>'+
@@ -809,8 +815,11 @@ function buildModal(c,mode){
 }
 
 function toggleRented(){
-  document.getElementById('rentedFields').style.display=
-    document.getElementById('mStatus').value==='Rented'?'block':'none';
+  var st=document.getElementById('mStatus').value;
+  var showFields=st==='Rented'||st==='Reservation';
+  document.getElementById('rentedFields').style.display=showFields?'block':'none';
+  var rc=document.getElementById('resCatField');
+  if(rc)rc.style.display=st==='Reservation'?'block':'none';
 }
 function autoSetReturn(){
   var rentDate=document.getElementById('mRentDate');
