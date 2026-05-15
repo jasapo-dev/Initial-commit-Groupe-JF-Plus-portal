@@ -159,6 +159,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .footer-right{font-size:11px;color:var(--green3);display:flex;align-items:center;gap:5px}
 @media(max-width:768px){.navbar{padding:0 1rem}.body{padding:1rem}.nav-title{display:none}.cal-cell{min-height:60px}}
 </style>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTXhNFj1REWyHjBpC4-qASfGRFjXlsGdQ&libraries=places" async defer></script>
 </head>
 <body>
 
@@ -243,7 +244,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
 <script>
 const SB='https://jaxdcbmvyysuhrkhgpnv.supabase.co';
-const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imphemdjam12eXlzdWhya2hncG52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MTExODksImV4cCI6MjA5NDE4NzE4OX0.fceMVwEHiaUin2r9uY_8e0a84SG0l0aeKyfE-xYSjfI';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpheGRjYm12eXlzdWhya2hncG52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MTExODksImV4cCI6MjA5NDE4NzE4OX0.fceMVwEHiaUin2r9uY_8e0a84SG0l0aeKyfE-xYSjfI';
 const H={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
 
 let lang=localStorage.getItem('jf_lang')||'en';
@@ -477,6 +478,7 @@ function openAddEvent(dateStr){
         <button class="btn primary" onclick="saveEvent()"><i class="ti ti-check"></i> ${t.save}</button>
       </div>
     </div></div>`;
+  setTimeout(()=>initAddressAC('ev-address'),400);
 }
 
 async function saveEvent(){
@@ -506,7 +508,6 @@ async function saveEvent(){
     toast(t.err+e.message,'error',5000);
   }
 }
-
 async function deleteEvent(id){
   const t=x();
   if(!confirm(lang==='fr'?'Supprimer cet événement ?':'Delete this event?'))return;
@@ -515,6 +516,29 @@ async function deleteEvent(id){
     toast(t.deleted,'success');await loadAll();
     if(selectedDate)renderSelectedDay(selectedDate);
   }catch(e){toast(t.err+e.message,'error');}
+}
+
+function initAddressAC(inputId){
+  const input=document.getElementById(inputId);
+  if(!input||input._acDone)return;
+  if(!window.google||!window.google.maps||!window.google.maps.places){
+    setTimeout(()=>initAddressAC(inputId),400);return;
+  }
+  input._acDone=true;
+  const ac=new google.maps.places.Autocomplete(input,{
+    componentRestrictions:{country:['ca']},
+    fields:['formatted_address']
+  });
+  const qcBounds=new google.maps.LatLngBounds(
+    new google.maps.LatLng(44.9,-79.5),
+    new google.maps.LatLng(47.1,-71.1)
+  );
+  ac.setBounds(qcBounds);
+  ac.addListener('place_changed',function(){
+    const p=ac.getPlace();
+    if(p&&p.formatted_address)input.value=p.formatted_address;
+  });
+  input.addEventListener('keydown',function(e){if(e.key==='Enter')e.preventDefault();},{once:true});
 }
 
 function closeModal(){document.getElementById('mc').innerHTML='';}

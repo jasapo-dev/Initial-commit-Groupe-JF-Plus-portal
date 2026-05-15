@@ -402,7 +402,7 @@ td.mono{font-family:var(--mono);font-size:12px;color:var(--green3)}
 
 <script>
 const SB='https://jaxdcbmvyysuhrkhgpnv.supabase.co';
-const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imphemdjam12eXlzdWhya2hncG52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MTExODksImV4cCI6MjA5NDE4NzE4OX0.fceMVwEHiaUin2r9uY_8e0a84SG0l0aeKyfE-xYSjfI';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpheGRjYm12eXlzdWhya2hncG52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MTExODksImV4cCI6MjA5NDE4NzE4OX0.fceMVwEHiaUin2r9uY_8e0a84SG0l0aeKyfE-xYSjfI';
 const H={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
 const BASE_RATES={'7V':350,'10V':425,'15V':525,'20V':625,'25V (BOX)':750};
 
@@ -1000,7 +1000,7 @@ function initAddressAC(inputId){
 document.getElementById('btn-fr').className='lang-btn'+(lang==='fr'?' active':'');
 document.getElementById('btn-en').className='lang-btn'+(lang==='en'?' active':'');
 applyLang();loadAll();newInvoice();
-setTimeout(()=>initAddressAC('inv-client-address'),800);
+setTimeout(()=>initAddressAC('f-caddr'),800);
 setInterval(loadAll,30000);
 </script>
 </body>
