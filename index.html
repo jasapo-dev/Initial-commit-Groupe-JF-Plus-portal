@@ -696,10 +696,16 @@ function initPlacesAutocomplete(){
   input._acDone=true;
   google.maps.event.clearInstanceListeners(input);
   var ac=new google.maps.places.Autocomplete(input,{
-    componentRestrictions:{country:['ca','us']},
+    componentRestrictions:{country:['ca']},
     fields:['formatted_address'],
     types:['address']
   });
+  // Bias results toward Montreal/Quebec
+  var qcBounds=new google.maps.LatLngBounds(
+    new google.maps.LatLng(44.9,-79.5),
+    new google.maps.LatLng(47.1,-71.1)
+  );
+  ac.setBounds(qcBounds);
   ac.addListener('place_changed',function(){
     var p=ac.getPlace();
     if(p&&p.formatted_address)input.value=p.formatted_address;
