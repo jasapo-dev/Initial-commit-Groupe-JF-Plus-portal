@@ -133,12 +133,14 @@ select.filter option{background:var(--bg2)}
 .card.available::after{background:var(--green2)}
 .card.rented::after{background:var(--amber)}
 .card.maintenance::after{background:var(--red)}
+.card.reservation::after{background:var(--blue)}
 .card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
 .cid{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.05em}
 .badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase}
 .badge.available{background:rgba(79,168,79,0.15);color:var(--green3);border:1px solid rgba(79,168,79,0.25)}
 .badge.rented{background:var(--amber-bg);color:var(--amber-text);border:1px solid rgba(200,137,26,0.25)}
 .badge.maintenance{background:var(--red-bg);color:var(--red-text);border:1px solid rgba(192,57,43,0.25)}
+.badge.reservation{background:var(--blue-bg);color:var(--blue-text);border:1px solid rgba(41,128,185,0.25)}
 .card-size{font-size:24px;font-weight:700;color:var(--text);margin-bottom:3px;line-height:1}
 .card-client{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:18px}
 .card-addr{font-size:11px;color:var(--text3);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:3px}
@@ -326,6 +328,7 @@ select.filter option{background:var(--bg2)}
       <option value="Available" id="opt-av"></option>
       <option value="Rented" id="opt-re"></option>
       <option value="Maintenance" id="opt-ma"></option>
+      <option value="Reservation" id="opt-res"></option>
     </select>
     <select class="filter" id="f-sort" onchange="render()">
       <option value="id" id="opt-sort-id"></option>
@@ -369,7 +372,7 @@ const SB='https://jaxdcbmvyysuhrkhgpnv.supabase.co';
 const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpheGRjYm12eXlzdWhya2hncG52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MTExODksImV4cCI6MjA5NDE4NzE4OX0.fceMVwEHiaUin2r9uY_8e0a84SG0l0aeKyfE-xYSjfI';
 const GMAPS_KEY='AIzaSyDriOnQ-lFHE7BZJYtTOF0Q_UaHTp_vNuw';
 const H={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
-const STATUS_COLOR={Available:'#4fa84f',Rented:'#c8891a',Maintenance:'#c0392b'};
+const STATUS_COLOR={Available:'#4fa84f',Rented:'#c8891a',Maintenance:'#c0392b',Reservation:'#2980b9'};
 
 // ── STATE ────────────────────────────────────────────────────────────────────
 let containers=[],clients=[],lang=localStorage.getItem('jf_lang')||'fr',tab='list';
@@ -383,7 +386,7 @@ const T={
     search:'Rechercher ID, client, adresse...',
     allSize:'Toutes les tailles',allStatus:'Tous les statuts',
     sortId:'Trier: ID',sortSize:'Trier: Taille',sortStatus:'Trier: Statut',sortOver:'Trier: En retard',
-    sl:{Available:'Disponible',Rented:'Loué',Maintenance:'Maintenance'},
+    sl:{Available:'Disponible',Rented:'Loué',Maintenance:'Maintenance',Reservation:'Réservation'},
     unassigned:'Non assigné',noResults:'Aucun résultat.',
     overdue:'En retard',due:'Retour:',
     mapNone:'Aucun conteneur avec adresse.',mapNoneSub:'Assignez un client avec adresse pour voir ici.',
@@ -404,7 +407,9 @@ const T={
     alertTitle:'Alertes de retard',alertInfo:'Notification quand un conteneur est en retard.',
     alertEmail:'Courriel',alertAdd:'Activer',alertNone:'Aucune alerte.',
     pdfTitle:'Rapport Groupe JF Plus',
-    clientHint:'Client existant — données pré-remplies'
+    fEmail:'Courriel',fResCat:'Catégorie de réservation',
+    resCats:['Résidentiel','Commercial','Construction','Événement'],
+    clientHint:'Client existant — données pré-remplies',
   },
   en:{
     title:'Container Management',add:'Add',refresh:'Refresh',
@@ -413,7 +418,7 @@ const T={
     search:'Search ID, client, address...',
     allSize:'All sizes',allStatus:'All statuses',
     sortId:'Sort: ID',sortSize:'Sort: Size',sortStatus:'Sort: Status',sortOver:'Sort: Overdue',
-    sl:{Available:'Available',Rented:'Rented',Maintenance:'Maintenance'},
+    sl:{Available:'Available',Rented:'Rented',Maintenance:'Maintenance',Reservation:'Reservation'},
     unassigned:'Unassigned',noResults:'No results found.',
     overdue:'Overdue',due:'Due:',
     mapNone:'No containers with address.',mapNoneSub:'Assign a client with address to see here.',
@@ -434,7 +439,9 @@ const T={
     alertTitle:'Overdue alerts',alertInfo:'Notification when a container is overdue.',
     alertEmail:'Email',alertAdd:'Enable',alertNone:'No alerts.',
     pdfTitle:'Groupe JF Plus Report',
-    clientHint:'Existing client — data pre-filled'
+    fEmail:'Email',fResCat:'Reservation category',
+    resCats:['Residential','Commercial','Construction','Event'],
+    clientHint:'Existing client — data pre-filled',
   }
 };
 const t=()=>T[lang];
@@ -459,6 +466,7 @@ function applyLang(){
   document.getElementById('opt-av').textContent=x.sl.Available;
   document.getElementById('opt-re').textContent=x.sl.Rented;
   document.getElementById('opt-ma').textContent=x.sl.Maintenance;
+  document.getElementById('opt-res').textContent=x.sl.Reservation;
   document.getElementById('opt-sort-id').textContent=x.sortId;
   document.getElementById('opt-sort-size').textContent=x.sortSize;
   document.getElementById('opt-sort-status').textContent=x.sortStatus;
@@ -658,9 +666,8 @@ function selectClient(i,name){
   if(!c)return;
   document.getElementById('mClient').value=c.name;
   if(c.phone)document.getElementById('mPhone').value=c.phone;
-  if(c.address){
-    document.getElementById('mAddress').value=c.address;
-  }
+  if(c.email){var em=document.getElementById('mEmail');if(em)em.value=c.email;}
+  if(c.address)document.getElementById('mAddress').value=c.address;
   list.style.display='none';
   toast(t().clientHint,'success',2000);
 }
@@ -752,12 +759,21 @@ function buildModal(c,mode){
             '<div class="field"><label for="mSize">'+x.fSize+'</label><select id="mSize"><option>7V</option><option>10V</option><option>15V</option><option>20V</option><option>25V (BOX)</option></select></div>'+
             '<div class="field"><label for="mColor">'+x.fColor+'</label><select id="mColor"><option>GREEN</option><option>BLUE</option><option>BLACK</option><option>RED</option></select></div>'+
           '</div>':'')+
-        '<div class="field"><label for="mStatus">'+x.fStatus+'</label>'+
-          '<select id="mStatus" onchange="toggleRented()">'+
-            '<option value="Available"'+(c.status==='Available'?' selected':'')+'>'+x.sl.Available+'</option>'+
-            '<option value="Rented"'+(c.status==='Rented'?' selected':'')+'>'+x.sl.Rented+'</option>'+
-            '<option value="Maintenance"'+(c.status==='Maintenance'?' selected':'')+'>'+x.sl.Maintenance+'</option>'+
-          '</select>'+
+        '<div class="field-row">'+
+          '<div class="field"><label for="mStatus">'+x.fStatus+'</label>'+
+            '<select id="mStatus" onchange="toggleRented()">'+
+              '<option value="Available"'+(c.status==='Available'?' selected':'')+'>'+x.sl.Available+'</option>'+
+              '<option value="Rented"'+(c.status==='Rented'?' selected':'')+'>'+x.sl.Rented+'</option>'+
+              '<option value="Reservation"'+(c.status==='Reservation'?' selected':'')+'>'+x.sl.Reservation+'</option>'+
+              '<option value="Maintenance"'+(c.status==='Maintenance'?' selected':'')+'>'+x.sl.Maintenance+'</option>'+
+            '</select>'+
+          '</div>'+
+          '<div class="field" id="resCatField" style="display:'+(c.status==='Reservation'?'block':'none')+'">'+
+            '<label for="mResCat">'+x.fResCat+'</label>'+
+            '<select id="mResCat">'+
+              x.resCats.map(function(cat){return'<option value="'+cat+'"'+(c.reservation_category===cat?' selected':'')+'>'+cat+'</option>';}).join('')+
+            '</select>'+
+          '</div>'+
         '</div>'+
         '<div id="rentedFields" style="display:'+rentDisplay+'">'+
           '<div class="section-sep"><i class="ti ti-user" style="font-size:12px"></i>'+x.clientSec+'</div>'+
@@ -768,10 +784,14 @@ function buildModal(c,mode){
           '</div>'+
           '<div class="field-row">'+
             '<div class="field"><label for="mPhone">'+x.fPhone+'</label><input id="mPhone" value="'+san(c.phone||'')+'" maxlength="30"></div>'+
-            '<div class="field"><label for="mRentDate">'+x.fRentDate+'</label><input type="date" id="mRentDate" value="'+san(c.rented_date||today)+'"></div>'+
+            '<div class="field"><label for="mEmail">'+x.fEmail+'</label><input type="email" id="mEmail" value="'+san(c.email||'')+'" maxlength="200"></div>'+
+          '</div>'+
+          '<div class="field-row">'+
+            '<div class="field"><label for="mRentDate">'+x.fRentDate+'</label><input type="date" id="mRentDate" value="'+san(c.rented_date||today)+'" onchange="autoSetReturn()"></div>'+
+            '<div class="field"><label for="mReturn">'+x.fReturn+'</label><input type="date" id="mReturn" value="'+san(c.return_date||defaultReturnStr)+'"></div>'+
           '</div>'+
           '<div class="field"><label for="mAddress">'+x.fAddr+'</label><input id="mAddress" value="'+san(c.address||'')+'" placeholder="'+x.fAddrPh+'" maxlength="300" autocomplete="off"></div>'+
-          '<div class="field"><label for="mReturn">'+x.fReturn+'</label><input type="date" id="mReturn" value="'+san(c.return_date||'')+'"></div>'+
+          '<div class="field"><label for="mReturn">'+x.fReturn+'</label><input type="date" id="mReturn" value="'+san(c.return_date||defaultReturnStr)+'"></div>'+
         '</div>'+
         '<div class="field"><label for="mNotes">'+x.fNotes+'</label><textarea id="mNotes" maxlength="500">'+san(c.notes||'')+'</textarea></div>'+
         '<div style="height:8px"></div>'+
@@ -791,6 +811,15 @@ function buildModal(c,mode){
 function toggleRented(){
   document.getElementById('rentedFields').style.display=
     document.getElementById('mStatus').value==='Rented'?'block':'none';
+}
+function autoSetReturn(){
+  var rentDate=document.getElementById('mRentDate');
+  var retDate=document.getElementById('mReturn');
+  if(!rentDate||!retDate)return;
+  var d=new Date(rentDate.value);
+  if(isNaN(d.getTime()))return;
+  d.setDate(d.getDate()+7);
+  retDate.value=d.toISOString().slice(0,10);
 }
 function closeModal(){document.getElementById('mc').innerHTML='';}
 
@@ -823,11 +852,11 @@ async function doSave(oldId){
       payload.color=document.getElementById('mColor').value;
       await api('POST','containers',payload);
       // Save/update client record if rented
-      if(isRented&&payload.client)await saveClient(payload);
+      if(isRentedOrRes&&payload.client)await saveClient(payload);
       toast(x.added,'success');
     }else{
       await api('PATCH','containers?container_id=eq.'+encodeURIComponent(oldId),payload);
-      if(isRented&&payload.client)await saveClient(payload);
+      if(isRentedOrRes&&payload.client)await saveClient(payload);
       toast(x.saved,'success');
     }
     closeModal();await loadAll();
