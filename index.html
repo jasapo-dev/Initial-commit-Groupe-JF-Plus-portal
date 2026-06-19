@@ -186,6 +186,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   .body{padding:1rem}
   .nav-title{display:none}
 }
+/* ── MOBILE BOTTOM TAB BAR ── */
+.bottom-tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--navy);border-top:1px solid var(--border2);z-index:150;height:60px;padding:0 4px;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-tab-bar a,.bottom-tab-bar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:var(--text3);font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:none;border:none;cursor:pointer;font-family:var(--font);padding:6px 2px;transition:color .15s;-webkit-tap-highlight-color:transparent}
+.bottom-tab-bar a.active,.bottom-tab-bar button.active{color:var(--green3)}
+.bottom-tab-bar a:hover,.bottom-tab-bar button:hover{color:var(--text2)}
+.bottom-tab-icon{font-size:20px;line-height:1}
+@media(max-width:768px){
+  .bottom-tab-bar{display:flex}
+  .body{padding-bottom:72px}
+  .navbar .nav-btn:not(.primary){display:none}
+}
 </style>
 </head>
 <body>
@@ -290,6 +301,25 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
           </div>
           <span class="nav-card-arrow">→</span>
         </a>
+        <a href="services/" class="nav-card" style="--card-accent:#0e9f8e">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="nav-card-icon" style="background:rgba(14,159,142,.1);border:1px solid rgba(14,159,142,.2)">🔧</div>
+            <div>
+              <div class="nav-card-title" id="nc-svc">Services</div>
+              <div class="nav-card-desc" id="nc-svc-desc">Express pickup, demolition & more</div>
+            </div>
+          </div>
+          <span class="nav-card-arrow">→</span>
+        </a>
+      </div>
+
+      <!-- UPCOMING TASKS -->
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">📋 <span id="lbl-upcoming-tasks">Upcoming Tasks</span></span>
+          <a href="calendar/" class="panel-link">Calendar →</a>
+        </div>
+        <div id="upcoming-tasks-list"><div class="empty-panel">Loading…</div></div>
       </div>
 
       <!-- TODAY'S SCHEDULE -->
@@ -418,6 +448,7 @@ function applyLang(){
   document.getElementById('greeting-sub').textContent=t.greetSub;
   document.getElementById('lbl-today').textContent=t.today;
   document.getElementById('lbl-view-all').textContent=t.viewAll;
+  document.getElementById('lbl-upcoming-tasks').textContent=lang==='fr'?'Tâches à venir':'Upcoming Tasks';
   document.getElementById('lbl-activity').textContent=t.activity;
   document.getElementById('lbl-pending').textContent=t.pending;
   document.getElementById('lbl-overdue').textContent=t.overdue;
@@ -478,7 +509,37 @@ async function loadAll(){
 
 function renderAll(){
   applyLang();setGreeting();
-  renderStats();renderSchedule();renderActivity();renderPending();renderOverdue();
+  renderStats();renderSchedule();renderActivity();renderPending();renderOverdue();renderUpcoming();
+}
+
+function renderUpcoming(){
+  const t=x();
+  const today=new Date().toISOString().slice(0,10);
+  const upcoming=[];
+  // From calendar events
+  events.filter(e=>e.event_date>today).forEach(e=>{
+    upcoming.push({date:e.event_date,title:e.title,meta:e.client_name||'',color:'var(--purple-text)',icon:'📅'});
+  });
+  // Container deliveries upcoming
+  containers.filter(c=>c.rented_date&&c.rented_date>today).forEach(c=>{
+    upcoming.push({date:c.rented_date,title:(lang==='fr'?'Livraison: ':'Delivery: ')+c.container_id+' ('+c.size+')',meta:c.client||'',color:'var(--amber-text)',icon:'📦'});
+  });
+  // Container pickups upcoming
+  containers.filter(c=>c.return_date&&c.return_date>today&&(c.status||'').toLowerCase()==='rented').forEach(c=>{
+    upcoming.push({date:c.return_date,title:(lang==='fr'?'Récupération: ':'Pickup: ')+c.container_id+' ('+c.size+')',meta:c.client||'',color:'var(--green3)',icon:'✅'});
+  });
+  upcoming.sort((a,b)=>a.date.localeCompare(b.date));
+  const el=document.getElementById('upcoming-tasks-list');
+  if(!el)return;
+  if(!upcoming.length){el.innerHTML=`<div class="empty-panel">${lang==='fr'?'Aucune tâche à venir.':'No upcoming tasks.'}</div>`;return;}
+  el.innerHTML=upcoming.slice(0,8).map(u=>`
+    <div class="schedule-item">
+      <span class="sched-dot" style="background:${u.color}"></span>
+      <div class="sched-info">
+        <div class="sched-title">${u.icon} ${san(u.title)}</div>
+        <div class="sched-meta">${san(u.meta)}${u.meta?' · ':''}${u.date}</div>
+      </div>
+    </div>`).join('');
 }
 
 function renderStats(){
@@ -489,13 +550,19 @@ function renderStats(){
   const pending=transactions.filter(tx=>(tx.status||'').toLowerCase()==='pending').length;
   const unpaid=invoices.filter(i=>(i.status||'').toLowerCase()==='unpaid').length;
   const totalClients=clients.length;
+  const mkStat=(color,label,val,filter)=>{
+    const href=filter?`container-tracking/?status=${filter}`:'';
+    const tag=href?'a':'div';
+    const extra=href?`href="${href}" style="text-decoration:none;display:block;cursor:pointer" title="View ${filter} containers"`:'';
+    return `<${tag} class="stat ${color}" ${extra}><div class="stat-label">${label}</div><div class="stat-val ${color}">${val}</div></${tag}>`;
+  };
   document.getElementById('stats').innerHTML=
-    `<div class="stat blue"><div class="stat-label">${t.statContainers}</div><div class="stat-val blue">${total}</div></div>`+
-    `<div class="stat amber"><div class="stat-label">${t.statRented}</div><div class="stat-val amber">${rented}</div></div>`+
-    `<div class="stat green"><div class="stat-label">${t.statAvail}</div><div class="stat-val green">${avail}</div></div>`+
-    `<div class="stat purple"><div class="stat-label">${t.statPending}</div><div class="stat-val purple">${pending}</div></div>`+
-    `<div class="stat red"><div class="stat-label">${t.statUnpaid}</div><div class="stat-val red">${unpaid}</div></div>`+
-    `<div class="stat teal"><div class="stat-label">${t.statClients}</div><div class="stat-val teal">${totalClients}</div></div>`;
+    mkStat('blue',t.statContainers,total,'')+
+    mkStat('amber',t.statRented,rented,'Rented')+
+    mkStat('green',t.statAvail,avail,'Available')+
+    mkStat('purple',t.statPending,pending,'')+
+    mkStat('red',t.statUnpaid,unpaid,'')+
+    mkStat('teal',t.statClients,totalClients,'');
 }
 
 function renderSchedule(){
@@ -647,5 +714,15 @@ applyLang();setGreeting();loadAll();loadWeather();
 setInterval(loadAll,30000);
 setInterval(loadWeather,600000);
 </script>
+
+<!-- BOTTOM TAB BAR (mobile) -->
+<div class="bottom-tab-bar">
+  <a href="" class="active"><span class="bottom-tab-icon">⌂</span>Home</a>
+  <a href="container-tracking/"><span class="bottom-tab-icon">📦</span>Containers</a>
+  <a href="invoicing/"><span class="bottom-tab-icon">🧾</span>Invoicing</a>
+  <a href="services/"><span class="bottom-tab-icon">🔧</span>Services</a>
+  <a href="calendar/"><span class="bottom-tab-icon">📅</span>Calendar</a>
+  <a href="timesheets/"><span class="bottom-tab-icon">⏱</span>Time</a>
+</div>
 </body>
 </html>

@@ -167,6 +167,17 @@ tfoot td.emp-col{text-align:left;padding-left:14px;color:var(--text3);font-size:
 .footer-left{font-size:11px;color:var(--text3)}
 .footer-right{font-size:11px;color:var(--green3);display:flex;align-items:center;gap:5px}
 @media(max-width:768px){.navbar{padding:0 1rem}.body{padding:1rem}.nav-title{display:none}.stats{grid-template-columns:repeat(2,1fr)}}
+/* ── MOBILE BOTTOM TAB BAR ── */
+.bottom-tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--navy);border-top:1px solid var(--border2);z-index:150;height:60px;padding:0 4px;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-tab-bar a,.bottom-tab-bar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:var(--text3);font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:none;border:none;cursor:pointer;font-family:var(--font);padding:6px 2px;transition:color .15s;-webkit-tap-highlight-color:transparent}
+.bottom-tab-bar a.active,.bottom-tab-bar button.active{color:var(--green3)}
+.bottom-tab-bar a:hover,.bottom-tab-bar button:hover{color:var(--text2)}
+.bottom-tab-icon{font-size:20px;line-height:1}
+@media(max-width:768px){
+  .bottom-tab-bar{display:flex}
+  .body{padding-bottom:72px}
+  .navbar .nav-btn:not(.primary){display:none}
+}
 </style>
 </head>
 <body>
@@ -577,5 +588,15 @@ document.getElementById('btn-en').className='lang-btn'+(lang==='en'?' active':''
 applyLang();loadAll();
 setInterval(loadAll,60000);
 </script>
+
+<!-- BOTTOM TAB BAR (mobile) -->
+<div class="bottom-tab-bar">
+  <a href="../"><span class="bottom-tab-icon">⌂</span>Home</a>
+  <a href="../container-tracking/"><span class="bottom-tab-icon">📦</span>Containers</a>
+  <a href="../invoicing/"><span class="bottom-tab-icon">🧾</span>Invoicing</a>
+  <a href="../services/"><span class="bottom-tab-icon">🔧</span>Services</a>
+  <a href="../calendar/"><span class="bottom-tab-icon">📅</span>Calendar</a>
+  <a href="../timesheets/" class="active"><span class="bottom-tab-icon">⏱</span>Time</a>
+</div>
 </body>
 </html>

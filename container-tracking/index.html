@@ -260,13 +260,24 @@ select.filter option{background:var(--bg2)}
 .footer-left{font-size:11px;color:var(--text3)}
 .footer-right{font-size:11px;color:var(--green3);display:flex;align-items:center;gap:5px}
 
+/* ── MOBILE BOTTOM TAB BAR ── */
+.bottom-tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--navy);border-top:1px solid var(--border2);z-index:150;height:60px;padding:0 4px;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-tab-bar a,.bottom-tab-bar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:var(--text3);font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:none;border:none;cursor:pointer;font-family:var(--font);padding:6px 2px;transition:color .15s;-webkit-tap-highlight-color:transparent}
+.bottom-tab-bar a.active,.bottom-tab-bar button.active{color:var(--green3)}
+.bottom-tab-bar a:hover,.bottom-tab-bar button:hover{color:var(--text2)}
+.bottom-tab-icon{font-size:20px;line-height:1}
+@media(max-width:768px){
+  .bottom-tab-bar{display:flex}
+  .body{padding-bottom:72px}
+  .nav-right .nav-btn:not(.primary){display:none}
+  .nav-title{display:none}
+  .nav-count{display:none}
+}
+
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
   .stats{grid-template-columns:repeat(2,1fr)}
   .navbar{padding:0 1rem}
-  .body{padding:1rem}
-  .nav-title{display:none}
-  .nav-count{display:none}
 }
 @media(max-width:480px){
   .stats{grid-template-columns:repeat(2,1fr)}
@@ -376,6 +387,8 @@ select.filter option{background:var(--bg2)}
   <span class="footer-left">© Groupe JF Plus Inc. — (514) 880-1024 — info@groupejfplus.com</span>
   <span class="footer-right"><i class="ti ti-database" style="font-size:12px"></i> Supabase</span>
 </footer>
+
+
 
 <!-- MODAL CONTAINER -->
 <div id="mc"></div>
@@ -508,11 +521,10 @@ function dbStatus(state){
 
 // ── API ───────────────────────────────────────────────────────────────────────
 async function api(method,path,body){
-  const r=await fetch(SB+'/rest/v1/'+path,{
-    method,headers:{...H,'Prefer':method==='POST'?'return=representation':'return=minimal'},
-    body:body?JSON.stringify(body):undefined
-  });
-  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.message||e.hint||r.status);}
+  const headers={...H};
+  if(method==='POST')headers['Prefer']='return=representation';
+  const r=await fetch(SB+'/rest/v1/'+path,{method,headers,body:body?JSON.stringify(body):undefined});
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.message||e.hint||e.error||r.status);}
   if(r.status===204||method==='PATCH'||method==='DELETE')return null;
   return r.json();
 }
@@ -551,6 +563,12 @@ function toast(msg,type,dur){
 }
 
 // ── STATS ─────────────────────────────────────────────────────────────────────
+function filterByStatus(st){
+  document.getElementById('f-status').value=st;
+  render();
+  // scroll to grid
+  document.getElementById('view-list').scrollIntoView({behavior:'smooth',block:'start'});
+}
 function renderStats(){
   const x=t();
   const total=containers.length;
@@ -558,19 +576,26 @@ function renderStats(){
   const re=containers.filter(c=>c.status==='Rented').length;
   const ma=containers.filter(c=>c.status==='Maintenance').length;
   const od=containers.filter(isOverdue).length;
+  const res=containers.filter(c=>c.status==='Reservation').length;
   document.getElementById('nav-count').textContent=total+' conteneurs';
-  const res=containers.filter(function(c){return c.status==='Reservation';}).length;
   document.getElementById('stats').innerHTML=
-    stat('blue',x.stats[0],total,'')+
-    stat('green',x.stats[1],av,'')+
-    stat('amber',x.stats[2],re,'')+
-    stat('blue2',x.stats[5]||'Réservations',res,'')+
-    stat('red',x.stats[3],ma,'')+
-    stat('purple',x.stats[4],od,'');
+    statCard('blue',x.stats[0],total,'','')+ 
+    statCard('green',x.stats[1],av,'','Available')+
+    statCard('amber',x.stats[2],re,'','Rented')+
+    statCard('blue2',x.stats[5]||'Réservations',res,'','Reservation')+
+    statCard('red',x.stats[3],ma,'','Maintenance')+
+    statCard('purple',x.stats[4],od,'','overdue');
 }
-function stat(color,label,val,sub){
-  return '<div class="stat '+color+'"><div class="stat-label">'+label+'</div><div class="stat-val '+color+'">'+val+'</div>'+(sub?'<div class="stat-sub">'+sub+'</div>':'')+'</div>';
+function statCard(color,label,val,sub,filter){
+  const clickable=filter?'cursor:pointer;':'';
+  const onclick=filter?`onclick="${filter==='overdue'?`document.getElementById('f-sort').value='overdue';render();document.getElementById('view-list').scrollIntoView({behavior:'smooth'})`:(`filterByStatus('${filter}')`)}"`:'';
+  return `<div class="stat ${color}" style="${clickable}" ${onclick} title="${filter?'Click to filter':''}">`+
+    `<div class="stat-label">${label}</div>`+
+    `<div class="stat-val ${color}">${val}</div>`+
+    (sub?`<div class="stat-sub">${sub}</div>`:'')+
+  `</div>`;
 }
+function stat(color,label,val,sub){return statCard(color,label,val,sub,'');}
 
 // ── TAB ───────────────────────────────────────────────────────────────────────
 function switchTab(tb){
@@ -610,9 +635,23 @@ function render(){
   }
   grid.innerHTML=list.map(c=>{
     const od=isOverdue(c);
-    const footer=od
-      ?'<span class="overdue-tag">'+x.overdue+'</span>'
-      :c.return_date?'<span class="due-tag">'+x.due+' '+san(c.return_date)+'</span>':'';
+    // Days calculation
+    let daysHtml='';
+    if(c.status==='Rented'&&c.rented_date){
+      const days=Math.floor((new Date()-new Date(c.rented_date))/(1000*60*60*24));
+      const daysLeft=c.return_date?Math.floor((new Date(c.return_date)-new Date())/(1000*60*60*24)):null;
+      if(od){
+        const overdueDays=Math.abs(daysLeft);
+        daysHtml=`<span class="overdue-tag">${overdueDays}d ${lang==='fr'?'en retard':'overdue'}</span>`;
+      }else if(daysLeft!==null){
+        daysHtml=`<span class="due-tag" style="color:${daysLeft<=2?'var(--amber-text)':'var(--text3)'}">${daysLeft}d ${lang==='fr'?'restants':'left'}</span>`;
+      }
+    }else if(c.return_date&&!od){
+      daysHtml='<span class="due-tag">'+x.due+' '+san(c.return_date)+'</span>';
+    }
+    // Switch button for rented containers
+    const switchBtn=c.status==='Rented'?
+      `<button style="background:var(--blue-bg);border:1px solid rgba(41,128,185,.3);color:var(--blue-text);font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;cursor:pointer;font-family:var(--font)" onclick="event.stopPropagation();openSwitch('${san(c.container_id)}')" title="${lang==='fr'?'Changer conteneur':'Switch container'}">⇄</button>`:'';
     return '<div class="card '+c.status.toLowerCase()+'" onclick="openEdit(\''+san(c.container_id)+'\')">'+
       '<div class="card-top"><span class="cid">'+san(c.container_id)+'</span>'+
       '<span class="badge '+c.status.toLowerCase()+'">'+x.sl[c.status]+'</span></div>'+
@@ -622,8 +661,8 @@ function render(){
       '<div class="card-footer">'+
         '<span style="display:flex;align-items:center;gap:5px">'+
           '<span class="color-dot '+(c.color||'').toLowerCase()+'"></span>'+
-          '<span style="font-size:11px;color:var(--text3)">'+san(c.color||'')+'</span>'+
-        '</span>'+footer+
+          switchBtn+
+        '</span>'+daysHtml+
       '</div></div>';
   }).join('');
 }
@@ -738,6 +777,71 @@ function selectAddr(el,addr){
   if(list)list.style.display='none';
 }
 
+// ── SWITCH CONTAINER ──────────────────────────────────────────────────────────
+function openSwitch(cid){
+  const c=containers.find(x=>x.container_id===cid);
+  if(!c)return;
+  const available=containers.filter(x=>x.status==='Available'&&x.size===c.size);
+  const x=t();
+  document.getElementById('mc').innerHTML=
+    '<div class="overlay" id="ov" onclick="if(event.target.id===\'ov\')closeModal()">'+
+    '<div class="modal">'+
+      '<div class="modal-head">'+
+        '<span class="modal-title">⇄ '+(lang==='fr'?'Changer conteneur':'Switch Container')+' — '+san(c.container_id)+'</span>'+
+        '<button class="modal-close" onclick="closeModal()">×</button>'+
+      '</div>'+
+      '<div class="modal-body">'+
+        '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:14px;font-size:13px">'+
+          '<div style="color:var(--text2);margin-bottom:4px">'+(lang==='fr'?'Conteneur actuel:':'Current container:')+' <strong style="color:var(--amber-text)">'+san(c.container_id)+'</strong></div>'+
+          '<div style="color:var(--text3);font-size:12px">'+san(c.client||'—')+' · '+san(c.size)+'</div>'+
+        '</div>'+
+        (available.length?
+          '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">'+(lang==='fr'?'Conteneurs disponibles (même taille):':'Available containers (same size):')+' '+san(c.size)+'</div>'+
+          available.map(a=>
+            '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">'+
+              '<div>'+
+                '<div style="font-size:13px;font-weight:600;color:var(--green3);font-family:var(--mono)">'+san(a.container_id)+'</div>'+
+                '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+san(a.size)+(a.color?' · '+san(a.color):'')+'</div>'+
+              '</div>'+
+              '<button class="btn primary" style="height:30px;padding:0 12px;font-size:12px" onclick="doSwitch(\''+san(c.container_id)+'\',\''+san(a.container_id)+'\')">'+
+                (lang==='fr'?'Transférer':'Transfer →')+
+              '</button>'+
+            '</div>'
+          ).join(''):
+          '<div style="text-align:center;padding:2rem;color:var(--text3);font-size:13px">'+
+            (lang==='fr'?'Aucun conteneur disponible de taille '+san(c.size)+'.':'No available '+san(c.size)+' containers right now.')+
+          '</div>'
+        )+
+      '</div>'+
+      '<div class="modal-foot"><button class="btn" onclick="closeModal()">'+x.cancel+'</button></div>'+
+    '</div></div>';
+}
+
+async function doSwitch(fromId,toId){
+  const from=containers.find(c=>c.container_id===fromId);
+  const to=containers.find(c=>c.container_id===toId);
+  if(!from||!to)return;
+  if(!confirm((lang==='fr'?'Transférer le client de ':'Transfer client from ')+fromId+' → '+toId+'?'))return;
+  try{
+    // Copy client info to new container, set to Rented
+    await api('PATCH','containers?container_id=eq.'+encodeURIComponent(toId),{
+      status:'Rented',
+      client:from.client,phone:from.phone,email:from.email,
+      address:from.address,rented_date:from.rented_date,
+      return_date:from.return_date,
+      reservation_category:from.reservation_category,
+      notes:from.notes,updated_at:new Date().toISOString()
+    });
+    // Free the original
+    await api('PATCH','containers?container_id=eq.'+encodeURIComponent(fromId),{
+      status:'Available',client:'',phone:'',email:'',address:'',
+      rented_date:null,return_date:null,updated_at:new Date().toISOString()
+    });
+    toast((lang==='fr'?'Transféré vers ':'Transferred to ')+toId+' ✓','success');
+    closeModal();await loadAll();
+  }catch(e){toast((lang==='fr'?'Erreur: ':'Error: ')+e.message,'error',4000);}
+}
+
 // ── MODAL ─────────────────────────────────────────────────────────────────────
 let editId=null;
 
@@ -756,6 +860,19 @@ function buildModal(c,mode){
   const rentDisplay=(c.status==='Rented'||c.status==='Reservation')?'block':'none';
   const defaultReturn=new Date();defaultReturn.setDate(defaultReturn.getDate()+7);
   const defaultReturnStr=c.return_date||defaultReturn.toISOString().slice(0,10);
+  // Existing IDs and sizes for dropdowns
+  const existingIds=[...new Set(containers.map(c=>c.container_id))].sort();
+  const existingSizes=[...new Set(containers.map(c=>c.size))].sort();
+  // Days rented calculation
+  let daysInfo='';
+  if(!isNew&&c.rented_date&&c.status==='Rented'){
+    const days=Math.floor((new Date()-new Date(c.rented_date))/(1000*60*60*24));
+    const od=isOverdue(c);
+    daysInfo=`<div style="background:${od?'var(--red-bg)':'var(--green-glow)'};border:1px solid ${od?'rgba(192,57,43,.3)':'var(--border2)'};border-radius:var(--r);padding:8px 12px;margin-bottom:12px;font-size:12px;display:flex;align-items:center;justify-content:space-between">
+      <span style="color:${od?'var(--red-text)':'var(--text2)'}"><strong>${days}</strong> ${lang==='fr'?'jours loués':'days rented'}</span>
+      ${od?`<span style="color:var(--red-text);font-weight:700">⚠ ${lang==='fr'?'En retard':'Overdue'}</span>`:''}
+    </div>`;
+  }
   document.getElementById('mc').innerHTML=
     '<div class="overlay" id="ov" onclick="if(event.target.id===\'ov\')closeModal()">'+
     '<div class="modal">'+
@@ -767,10 +884,16 @@ function buildModal(c,mode){
         '<button class="modal-close" onclick="closeModal()">&#215;</button>'+
       '</div>'+
       '<div class="modal-body">'+
+        daysInfo+
         (isNew?
-          '<div class="field"><label>'+x.fId+'</label><input id="mId" placeholder="'+x.fIdPh+'" maxlength="20"></div>'+
+          '<div class="field"><label>'+x.fId+'</label>'+
+          '<select id="mId"><option value="">— '+x.fId+' —</option>'+
+          existingIds.map(id=>'<option value="'+san(id)+'">'+san(id)+'</option>').join('')+
+          '</select></div>'+
           '<div class="field-row">'+
-            '<div class="field"><label for="mSize">'+x.fSize+'</label><select id="mSize"><option>7V</option><option>10V</option><option>15V</option><option>20V</option><option>25V (BOX)</option></select></div>'+
+            '<div class="field"><label for="mSize">'+x.fSize+'</label><select id="mSize">'+
+            existingSizes.map(s=>'<option value="'+san(s)+'">'+san(s)+'</option>').join('')+
+            '</select></div>'+
             '<div class="field"><label for="mColor">'+x.fColor+'</label><select id="mColor"><option>GREEN</option><option>BLUE</option><option>BLACK</option><option>RED</option></select></div>'+
           '</div>':'')+
         '<div class="field-row">'+
@@ -801,7 +924,7 @@ function buildModal(c,mode){
             '<div class="field"><label for="mEmail">'+x.fEmail+'</label><input type="email" id="mEmail" value="'+san(c.email||'')+'" maxlength="200"></div>'+
           '</div>'+
           '<div class="field-row">'+
-            '<div class="field"><label for="mRentDate">'+x.fRentDate+'</label><input type="date" id="mRentDate" value="'+san(c.rented_date||today)+'" oninput="autoSetReturn()"></div>'+
+            '<div class="field"><label for="mRentDate">'+x.fRentDate+'</label><input type="date" id="mRentDate" value="'+san(c.rented_date||today)+'" oninput="autoSetReturn();updateDaysCounter()"></div>'+
             '<div class="field"><label for="mReturn">'+x.fReturn+'</label><input type="date" id="mReturn" value="'+san(defaultReturnStr)+'"></div>'+
           '</div>'+
           '<div class="field"><label for="mAddress">'+x.fAddr+'</label><input id="mAddress" value="'+san(c.address||'')+'" placeholder="'+x.fAddrPh+'" maxlength="300" autocomplete="off"></div>'+
@@ -819,6 +942,13 @@ function buildModal(c,mode){
     '</div></div>';
   setupClientAutocomplete();
   setTimeout(initPlacesAutocomplete,300);
+}
+
+function updateDaysCounter(){
+  const rd=document.getElementById('mRentDate');
+  if(!rd||!rd.value)return;
+  const days=Math.floor((new Date()-new Date(rd.value))/(1000*60*60*24));
+  // update inline if element exists
 }
 
 function toggleRented(){
@@ -858,7 +988,7 @@ async function doSave(oldId){
     rented_date:needsClient?(document.getElementById('mRentDate').value||null):null,
     return_date:needsClient?(document.getElementById('mReturn').value||null):null,
     reservation_category:status==='Reservation'&&resCatEl?resCatEl.value:null,
-    notes:(document.getElementById('mNotes').value||'').trim(),
+    notes:(document.getElementById('mNotes')&&document.getElementById('mNotes').value!==undefined?document.getElementById('mNotes').value:'').trim()||null,
     updated_at:new Date().toISOString()
   };
   try{
@@ -874,9 +1004,33 @@ async function doSave(oldId){
       if(needsClient&&payload.client)await saveClient(payload);
       toast(x.added,'success');
     }else{
+      // Get previous status before save
+      const prevContainer=containers.find(c=>c.container_id===oldId);
+      const prevStatus=prevContainer?prevContainer.status:null;
       await api('PATCH','containers?container_id=eq.'+encodeURIComponent(oldId),payload);
       if(needsClient&&payload.client)await saveClient(payload);
-      toast(x.saved,'success');
+      // Auto-create transaction if switching TO Rented
+      if(payload.status==='Rented'&&prevStatus!=='Rented'){
+        try{
+          await api('POST','transactions',{
+            container_id:prevContainer?prevContainer.id:null,
+            container_ref:oldId,
+            size:prevContainer?prevContainer.size:'',
+            client_name:payload.client||null,
+            client_phone:payload.phone||null,
+            client_email:payload.email||null,
+            client_address:payload.address||null,
+            status:'pending',
+            triggered_at:new Date().toISOString(),
+          });
+          toast((lang==='fr'?'Transaction créée — prête à facturer 💵 ':'Transaction created — ready to bill 💵 ')+x.saved,'success',4000);
+        }catch(te){
+          toast(x.saved,'success');
+          console.warn('Transaction auto-create failed:',te.message);
+        }
+      }else{
+        toast(x.saved,'success');
+      }
     }
     closeModal();await loadAll();
   }catch(e){
@@ -1048,9 +1202,27 @@ function exportCSV(filter){
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 applyLang();loadAll();
+// Handle status filter from URL param (e.g. from homepage stat cards)
+const urlParams=new URLSearchParams(window.location.search);
+const statusParam=urlParams.get('status');
+if(statusParam){
+  document.addEventListener('DOMContentLoaded',()=>{
+    const sel=document.getElementById('f-status');
+    if(sel)sel.value=statusParam;
+  });
+}
 setInterval(()=>{loadAll();checkOverdue();},30000);
 </script>
 
 
+<!-- BOTTOM TAB BAR (mobile) -->
+<div class="bottom-tab-bar">
+  <a href="../"><span class="bottom-tab-icon">⌂</span>Home</a>
+  <a href="../container-tracking/" class="active"><span class="bottom-tab-icon">📦</span>Containers</a>
+  <a href="../invoicing/"><span class="bottom-tab-icon">🧾</span>Invoicing</a>
+  <a href="../services/"><span class="bottom-tab-icon">🔧</span>Services</a>
+  <a href="../calendar/"><span class="bottom-tab-icon">📅</span>Calendar</a>
+  <a href="../timesheets/"><span class="bottom-tab-icon">⏱</span>Time</a>
+</div>
 </body>
 </html>

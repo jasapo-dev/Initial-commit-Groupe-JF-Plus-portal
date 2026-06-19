@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Groupe JF Plus — Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" crossorigin>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTXhNFj1REWyHjBpC4-qASfGRFjXlsGdQ&libraries=places" async defer></script>
+<style>
+.ti{display:inline-flex;align-items:center;justify-content:center;width:1em;height:1em;vertical-align:middle}
+.ti::before{content:'';display:block}
+.ti-refresh::before{content:'↻';font-size:1.1em}
+.ti-plus::before{content:'+';font-weight:700;font-size:1.1em}
+.ti-search::before{content:'⌕';font-size:1.1em}
+.ti-trash::before{content:'🗑';font-size:.85em}
+.ti-check::before{content:'✓';font-weight:700;font-size:1.1em}
+.ti-database::before{content:'🗄';font-size:.85em}
+.ti-home::before{content:'⌂';font-size:1em}
+.ti-edit::before{content:'✏️';font-size:.85em}
+.ti-x::before{content:'×';font-weight:700;font-size:1.2em}
+.ti-tools::before{content:'🔧';font-size:.85em}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1a0f;--bg2:#162416;--bg3:#1c2e1c;--card:#192619;
+  --navy:#111927;--navy2:#1a2840;
+  --green:#3d8b3d;--green2:#4fa84f;--green3:#6bc46b;--green-glow:rgba(79,168,79,0.15);
+  --border:rgba(79,168,79,0.12);--border2:rgba(79,168,79,0.25);--border3:rgba(79,168,79,0.4);
+  --text:#e2f0e2;--text2:#8fb88f;--text3:#5a7a5a;
+  --amber:#c8891a;--amber-bg:rgba(200,137,26,0.12);--amber-text:#e8a83a;
+  --red:#c0392b;--red-bg:rgba(192,57,43,0.12);--red-text:#e05a4a;
+  --blue:#2980b9;--blue-bg:rgba(41,128,185,0.12);--blue-text:#5aabde;
+  --purple:#8e44ad;--purple-bg:rgba(142,68,173,0.12);--purple-text:#b07fd4;
+  --teal:#0e9f8e;--teal-bg:rgba(14,159,142,0.12);--teal-text:#2dd4bf;
+  --r:8px;--r2:12px;--r3:16px;
+  --shadow:0 2px 12px rgba(0,0,0,0.4);--shadow2:0 4px 24px rgba(0,0,0,0.5);
+  --font:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border3);border-radius:3px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* NAVBAR */
+.navbar{background:var(--navy);border-bottom:1px solid var(--border);padding:0 1.5rem;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:12px}
+.nav-left{display:flex;align-items:center;gap:12px;min-width:0}
+.nav-logo{height:30px;filter:brightness(0) invert(1);opacity:.9;flex-shrink:0}
+.nav-divider{width:1px;height:20px;background:var(--border2);flex-shrink:0}
+.nav-title{font-size:13px;font-weight:500;color:var(--text2);white-space:nowrap}
+.nav-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.nav-btn{background:none;border:1px solid var(--border2);color:var(--text2);cursor:pointer;font-size:12px;padding:5px 12px;border-radius:var(--r);height:30px;display:flex;align-items:center;gap:5px;font-family:var(--font);transition:all .15s;text-decoration:none}
+.nav-btn:hover{border-color:var(--green2);color:var(--green3);background:var(--green-glow)}
+.nav-btn.primary{background:var(--green);border-color:var(--green);color:#fff;font-weight:500}
+.nav-btn.primary:hover{background:var(--green2)}
+.lang-toggle{display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;height:30px}
+.lang-btn{background:none;border:none;color:var(--text3);font-size:11px;font-weight:600;padding:0 10px;cursor:pointer;font-family:var(--font);transition:all .15s}
+.lang-btn.active{background:var(--green);color:#fff}
+.db-dot{width:7px;height:7px;border-radius:50%;background:var(--green2);flex-shrink:0;box-shadow:0 0 6px var(--green2)}
+.db-dot.err{background:var(--red);box-shadow:0 0 6px var(--red)}
+.db-dot.connecting{background:var(--amber);animation:pulse 1s infinite}
+.icon-btn{background:var(--bg2);border:1px solid var(--border);color:var(--text2);cursor:pointer;width:34px;height:34px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .15s}
+.icon-btn:hover{border-color:var(--green2);color:var(--green3);background:var(--green-glow)}
+
+/* BODY */
+.body{padding:1.25rem 1.5rem;max-width:1280px;margin:0 auto;padding-bottom:80px}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.25rem}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:14px 16px;position:relative;overflow:hidden;transition:border-color .15s;cursor:pointer}
+.stat:hover{border-color:var(--border2)}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat.blue::before{background:var(--blue)}.stat.amber::before{background:var(--amber)}
+.stat.green::before{background:var(--green2)}.stat.red::before{background:var(--red)}
+.stat.teal::before{background:var(--teal)}
+.stat-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.stat-val{font-size:26px;font-weight:700;line-height:1}
+.stat-val.blue{color:var(--blue-text)}.stat-val.amber{color:var(--amber-text)}
+.stat-val.green{color:var(--green3)}.stat-val.red{color:var(--red-text)}
+.stat-val.teal{color:var(--teal-text)}
+
+/* TOOLBAR */
+.toolbar{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:180px}
+.search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:15px;pointer-events:none}
+.search-wrap input{width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:13px;padding:7px 10px 7px 32px;border-radius:var(--r);height:34px;font-family:var(--font);transition:border-color .15s}
+.search-wrap input:focus{outline:none;border-color:var(--green2)}
+.search-wrap input::placeholder{color:var(--text3)}
+select.filter{background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:12px;padding:0 10px;border-radius:var(--r);height:34px;font-family:var(--font);cursor:pointer}
+select.filter:focus{outline:none;border-color:var(--green2)}
+select.filter option{background:var(--bg2)}
+
+/* SERVICE TYPE TABS */
+.type-tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.type-tab{padding:7px 16px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text2);transition:all .15s;display:flex;align-items:center;gap:6px}
+.type-tab:hover{border-color:var(--green2);color:var(--green3)}
+.type-tab.active{background:var(--green);border-color:var(--green);color:#fff}
+.type-tab.express{border-color:rgba(200,137,26,.3)}
+.type-tab.express.active{background:var(--amber);border-color:var(--amber)}
+.type-tab.demolition{border-color:rgba(192,57,43,.3)}
+.type-tab.demolition.active{background:var(--red);border-color:var(--red)}
+.type-tab.other-tab{border-color:rgba(142,68,173,.3)}
+.type-tab.other-tab.active{background:var(--purple);border-color:var(--purple)}
+
+/* CARD GRID (mobile) */
+.card-grid{display:none;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.svc-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:14px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.svc-card:hover{border-color:var(--green2);transform:translateY(-1px);box-shadow:var(--shadow)}
+.svc-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0;transition:opacity .15s}
+.svc-card:hover::after{opacity:1}
+.svc-card.express_pickup::after{background:var(--amber)}
+.svc-card.demolition::after{background:var(--red)}
+.svc-card.other::after{background:var(--purple)}
+.svc-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.svc-type-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em}
+.svc-type-badge.express_pickup{background:var(--amber-bg);color:var(--amber-text);border:1px solid rgba(200,137,26,.25)}
+.svc-type-badge.demolition{background:var(--red-bg);color:var(--red-text);border:1px solid rgba(192,57,43,.25)}
+.svc-type-badge.other{background:var(--purple-bg);color:var(--purple-text);border:1px solid rgba(142,68,173,.25)}
+.svc-client{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
+.svc-addr{font-size:11px;color:var(--text3);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.svc-footer{display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--border)}
+.svc-price{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--green3)}
+.svc-date{font-size:11px;color:var(--text3)}
+
+/* TABLE (desktop) */
+.tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.tbl-wrap table{width:100%;border-collapse:collapse;font-size:13px}
+.tbl-wrap thead tr{background:var(--navy);border-bottom:1px solid var(--border2)}
+.tbl-wrap thead th{padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
+.tbl-wrap tbody tr{border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer}
+.tbl-wrap tbody tr:last-child{border-bottom:none}
+.tbl-wrap tbody tr:hover{background:var(--bg2)}
+.tbl-wrap td{padding:11px 14px;color:var(--text);vertical-align:middle}
+.tbl-wrap td.mono{font-family:var(--mono);font-size:12px;color:var(--green3)}
+.empty-row td{text-align:center;padding:3rem;color:var(--text3);cursor:default}
+
+/* BADGE */
+.badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase}
+.badge.pending{background:var(--amber-bg);color:var(--amber-text);border:1px solid rgba(200,137,26,.25)}
+.badge.in_progress{background:var(--blue-bg);color:var(--blue-text);border:1px solid rgba(41,128,185,.25)}
+.badge.completed{background:rgba(79,168,79,.15);color:var(--green3);border:1px solid rgba(79,168,79,.25)}
+.badge.cancelled{background:var(--red-bg);color:var(--red-text);border:1px solid rgba(192,57,43,.25)}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;backdrop-filter:blur(2px)}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r3);width:100%;max-width:500px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow2)}
+.modal-head{background:var(--navy);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.modal-title{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px}
+.modal-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:2px 6px;border-radius:4px}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:1.25rem;overflow-y:auto;flex:1}
+.modal-foot{padding:10px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;background:var(--bg2)}
+.field{margin-bottom:12px}
+.field label{font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+.field input,.field select,.field textarea{width:100%;font-size:13px;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:var(--font);transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--green2)}
+.field select option{background:var(--bg2)}
+.field textarea{height:64px;resize:vertical}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.section-sep{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin:14px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.btn{font-size:12px;font-weight:500;padding:8px 16px;border:1px solid var(--border2);border-radius:var(--r);background:var(--card);color:var(--text);cursor:pointer;height:34px;display:inline-flex;align-items:center;gap:6px;font-family:var(--font);transition:all .15s;text-decoration:none}
+.btn:hover{background:var(--bg3);border-color:var(--border3)}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+.btn.primary:hover{background:var(--green2)}
+.btn.danger{color:var(--red-text);border-color:transparent;background:none}
+.btn.danger:hover{background:var(--red-bg)}
+.btn.sm{height:28px;padding:0 10px;font-size:11px}
+.autocomplete-wrap{position:relative}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:#1a2840;border:1px solid rgba(79,168,79,.4);border-radius:8px;z-index:99999;max-height:180px;overflow-y:auto;margin-top:2px;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.autocomplete-item{padding:9px 14px;cursor:pointer;font-size:13px;color:#e2f0e2;border-bottom:1px solid rgba(79,168,79,.12);transition:background .1s}
+.autocomplete-item:hover{background:rgba(79,168,79,.15);color:#6bc46b}
+.autocomplete-item small{font-size:11px;color:#5a7a5a;display:block;margin-top:1px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--navy2);color:var(--text);font-size:13px;padding:10px 20px;border-radius:var(--r);z-index:500;opacity:0;transition:all .2s;border:1px solid var(--border2);pointer-events:none;white-space:nowrap;box-shadow:var(--shadow2)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{border-color:rgba(79,168,79,.4);background:rgba(79,168,79,.1)}
+.toast.error{border-color:rgba(192,57,43,.4);background:rgba(192,57,43,.1)}
+.footer{background:var(--navy);border-top:1px solid var(--border);padding:10px 1.5rem;display:flex;align-items:center;justify-content:space-between;margin-top:2rem}
+.footer-left{font-size:11px;color:var(--text3)}
+.footer-right{font-size:11px;color:var(--green3);display:flex;align-items:center;gap:5px}
+
+/* BOTTOM TAB BAR */
+.bottom-tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--navy);border-top:1px solid var(--border2);z-index:150;height:60px;padding:0 4px;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-tab-bar a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:var(--text3);font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:6px 2px;transition:color .15s;-webkit-tap-highlight-color:transparent}
+.bottom-tab-bar a.active{color:var(--green3)}
+.bottom-tab-icon{font-size:20px;line-height:1}
+
+@media(max-width:900px){
+  .tbl-wrap{display:none}
+  .card-grid{display:grid}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .bottom-tab-bar{display:flex}
+  .body{padding-bottom:72px}
+  .navbar .nav-btn:not(.primary){display:none}
+  .nav-title{display:none}
+}
+@media(min-width:901px){
+  .tbl-wrap{display:block}
+  .card-grid{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-left">
+    <img src="https://ramassagededebris.com/wp-content/uploads/2022/12/logo-nav-2x.png" alt="JF+" class="nav-logo" onerror="this.style.display='none'">
+    <div class="nav-divider"></div>
+    <span class="nav-title" id="nav-title">Services</span>
+  </div>
+  <div class="nav-right">
+    <a href="../" class="nav-btn"><i class="ti ti-home"></i> <span id="lbl-home">Home</span></a>
+    <a href="../container-tracking/" class="nav-btn"><span id="lbl-ct">Containers</span></a>
+    <a href="../invoicing/" class="nav-btn"><span id="lbl-inv">Invoicing</span></a>
+    <a href="../clients/" class="nav-btn"><span id="lbl-cl">Clients</span></a>
+    <a href="../calendar/" class="nav-btn"><span id="lbl-cal">Calendar</span></a>
+    <a href="../timesheets/" class="nav-btn"><span id="lbl-ts">Timesheets</span></a>
+    <div style="width:1px;height:20px;background:var(--border2);flex-shrink:0"></div>
+    <div class="lang-toggle">
+      <button class="lang-btn" id="btn-fr" onclick="setLang('fr')">FR</button>
+      <button class="lang-btn active" id="btn-en" onclick="setLang('en')">EN</button>
+    </div>
+    <span class="db-dot connecting" id="db-dot"></span>
+    <span style="font-size:11px;color:var(--text3)" id="db-label"></span>
+    <button class="icon-btn" onclick="loadAll()"><i class="ti ti-refresh"></i></button>
+    <button class="nav-btn primary" onclick="openAdd()"><i class="ti ti-plus"></i> <span id="lbl-add">New Job</span></button>
+  </div>
+</nav>
+
+<div class="body">
+  <!-- STATS -->
+  <div class="stats" id="stats"></div>
+
+  <!-- TYPE FILTER TABS -->
+  <div class="type-tabs" id="type-tabs">
+    <button class="type-tab active" onclick="filterType('')" id="tab-all">🔧 <span id="lbl-all">All Services</span></button>
+    <button class="type-tab express" onclick="filterType('express_pickup')" id="tab-express">🚛 <span id="lbl-express">Express Pickup</span></button>
+    <button class="type-tab demolition" onclick="filterType('demolition')" id="tab-demo">💥 <span id="lbl-demo">Demolition</span></button>
+    <button class="type-tab other-tab" onclick="filterType('other')" id="tab-other">📋 <span id="lbl-other">Other</span></button>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <i class="ti ti-search"></i>
+      <input type="text" id="svc-search" oninput="render()" placeholder="Search client, address…">
+    </div>
+    <select class="filter" id="f-status" onchange="render()">
+      <option value="" id="opt-all-status">All statuses</option>
+      <option value="pending" id="opt-pending">Pending</option>
+      <option value="in_progress" id="opt-progress">In Progress</option>
+      <option value="completed" id="opt-completed">Completed</option>
+      <option value="cancelled" id="opt-cancelled">Cancelled</option>
+    </select>
+  </div>
+
+  <!-- CARDS (mobile) -->
+  <div class="card-grid" id="card-grid"></div>
+
+  <!-- TABLE (desktop) -->
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th id="th-type">Type</th>
+          <th id="th-client">Client</th>
+          <th id="th-addr">Address</th>
+          <th id="th-date">Date</th>
+          <th id="th-price">Price</th>
+          <th id="th-status">Status</th>
+          <th id="th-notes">Notes</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="svc-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<footer class="footer">
+  <span class="footer-left">© Groupe JF Plus Inc. — (514) 880-1024 — info@groupejfplus.com</span>
+  <span class="footer-right"><i class="ti ti-database" style="font-size:12px"></i> Supabase</span>
+</footer>
+
+<!-- BOTTOM TAB BAR -->
+<div class="bottom-tab-bar">
+  <a href="../"><span class="bottom-tab-icon">⌂</span>Home</a>
+  <a href="../container-tracking/"><span class="bottom-tab-icon">📦</span>Containers</a>
+  <a href="../invoicing/"><span class="bottom-tab-icon">🧾</span>Invoicing</a>
+  <a href="../services/" class="active"><span class="bottom-tab-icon">🔧</span>Services</a>
+  <a href="../calendar/"><span class="bottom-tab-icon">📅</span>Calendar</a>
+  <a href="../timesheets/"><span class="bottom-tab-icon">⏱</span>Time</a>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="mc"></div>
+
+<script>
+const SB='https://jaxdcbmvyysuhrkhgpnv.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpheGRjYm12eXlzdWhya2hncG52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MTExODksImV4cCI6MjA5NDE4NzE4OX0.fceMVwEHiaUin2r9uY_8e0a84SG0l0aeKyfE-xYSjfI';
+const H={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
+
+let lang=localStorage.getItem('jf_lang')||'en';
+let services=[],clients=[],activeType='';
+
+const T={
+  en:{
+    navTitle:'Services',home:'Home',ct:'Containers',inv:'Invoicing',cl:'Clients',cal:'Calendar',ts:'Timesheets',
+    add:'New Job',allSvc:'All Services',express:'Express Pickup',demo:'Demolition',other:'Other',
+    allStatus:'All statuses',pending:'Pending',progress:'In Progress',completed:'Completed',cancelled:'Cancelled',
+    thType:'Type',thClient:'Client',thAddr:'Address',thDate:'Date',thPrice:'Price',thStatus:'Status',thNotes:'Notes',
+    statTotal:'Total Jobs',statPending:'Pending',statProgress:'In Progress',statDone:'Completed',statRev:'Revenue',
+    addTitle:'New Service Job',editTitle:'Edit Job',
+    fType:'Service Type',fTitle:'Job Title',fClient:'Client',fPhone:'Phone',fEmail:'Email',
+    fAddr:'Address',fPrice:'Price ($)',fDate:'Scheduled Date',fStatus:'Status',fNotes:'Notes',
+    cancel:'Cancel',save:'Save',del:'Delete',
+    saved:'Job saved ✓',deleted:'Job deleted.',err:'Error: ',
+    online:'Online',offline:'Offline',connecting:'Connecting…',
+    noJobs:'No service jobs found.',
+    types:{express_pickup:'Express Pickup',demolition:'Demolition',other:'Other'},
+    statuses:{pending:'Pending',in_progress:'In Progress',completed:'Completed',cancelled:'Cancelled'},
+    clientHint:'Client pre-filled ✓',
+  },
+  fr:{
+    navTitle:'Services',home:'Accueil',ct:'Conteneurs',inv:'Facturation',cl:'Clients',cal:'Calendrier',ts:'Feuilles de temps',
+    add:'Nouveau travail',allSvc:'Tous les services',express:'Ramassage express',demo:'Démolition',other:'Autre',
+    allStatus:'Tous les statuts',pending:'En attente',progress:'En cours',completed:'Complété',cancelled:'Annulé',
+    thType:'Type',thClient:'Client',thAddr:'Adresse',thDate:'Date',thPrice:'Prix',thStatus:'Statut',thNotes:'Notes',
+    statTotal:'Total travaux',statPending:'En attente',statProgress:'En cours',statDone:'Complétés',statRev:'Revenus',
+    addTitle:'Nouveau travail',editTitle:'Modifier travail',
+    fType:'Type de service',fTitle:'Titre du travail',fClient:'Client',fPhone:'Téléphone',fEmail:'Courriel',
+    fAddr:'Adresse',fPrice:'Prix ($)',fDate:'Date prévue',fStatus:'Statut',fNotes:'Notes',
+    cancel:'Annuler',save:'Enregistrer',del:'Supprimer',
+    saved:'Travail enregistré ✓',deleted:'Travail supprimé.',err:'Erreur : ',
+    online:'En ligne',offline:'Hors ligne',connecting:'Connexion…',
+    noJobs:'Aucun travail trouvé.',
+    types:{express_pickup:'Ramassage express',demolition:'Démolition',other:'Autre'},
+    statuses:{pending:'En attente',in_progress:'En cours',completed:'Complété',cancelled:'Annulé'},
+    clientHint:'Client pré-rempli ✓',
+  }
+};
+const x=()=>T[lang];
+
+function setLang(l){
+  lang=l;localStorage.setItem('jf_lang',l);
+  document.getElementById('btn-fr').className='lang-btn'+(l==='fr'?' active':'');
+  document.getElementById('btn-en').className='lang-btn'+(l==='en'?' active':'');
+  applyLang();render();
+}
+
+function applyLang(){
+  const t=x();
+  document.getElementById('nav-title').textContent=t.navTitle;
+  document.getElementById('lbl-home').textContent=t.home;
+  document.getElementById('lbl-ct').textContent=t.ct;
+  document.getElementById('lbl-inv').textContent=t.inv;
+  document.getElementById('lbl-cl').textContent=t.cl;
+  document.getElementById('lbl-cal').textContent=t.cal;
+  document.getElementById('lbl-ts').textContent=t.ts;
+  document.getElementById('lbl-add').textContent=t.add;
+  document.getElementById('lbl-all').textContent=t.allSvc;
+  document.getElementById('lbl-express').textContent=t.express;
+  document.getElementById('lbl-demo').textContent=t.demo;
+  document.getElementById('lbl-other').textContent=t.other;
+  document.getElementById('opt-all-status').textContent=t.allStatus;
+  document.getElementById('opt-pending').textContent=t.pending;
+  document.getElementById('opt-progress').textContent=t.progress;
+  document.getElementById('opt-completed').textContent=t.completed;
+  document.getElementById('opt-cancelled').textContent=t.cancelled;
+  document.getElementById('th-type').textContent=t.thType;
+  document.getElementById('th-client').textContent=t.thClient;
+  document.getElementById('th-addr').textContent=t.thAddr;
+  document.getElementById('th-date').textContent=t.thDate;
+  document.getElementById('th-price').textContent=t.thPrice;
+  document.getElementById('th-status').textContent=t.thStatus;
+  document.getElementById('th-notes').textContent=t.thNotes;
+}
+
+function dbStatus(s){
+  const dot=document.getElementById('db-dot'),lbl=document.getElementById('db-label'),t=x();
+  dot.className='db-dot'+(s==='online'?' ':s==='offline'?' err':' connecting');
+  lbl.textContent=s==='online'?t.online:s==='offline'?t.offline:t.connecting;
+}
+
+async function api(method,path,body){
+  const headers={...H};
+  if(method==='POST')headers['Prefer']='return=representation';
+  const r=await fetch(SB+'/rest/v1/'+path,{method,headers,body:body?JSON.stringify(body):undefined});
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.message||e.hint||e.error||r.status);}
+  if(r.status===204||method==='DELETE'||method==='PATCH')return null;
+  return r.json();
+}
+
+async function loadAll(){
+  dbStatus('connecting');
+  try{
+    const [sv,cl]=await Promise.all([
+      api('GET','services?select=*&order=created_at.desc'),
+      api('GET','clients?select=*&order=name.asc'),
+    ]);
+    services=sv||[];clients=cl||[];
+    dbStatus('online');render();
+  }catch(e){dbStatus('offline');toast(x().err+e.message,'error');}
+}
+
+function filterType(type){
+  activeType=type;
+  document.querySelectorAll('.type-tab').forEach(t=>t.classList.remove('active'));
+  const map={'':'tab-all','express_pickup':'tab-express','demolition':'tab-demo','other':'tab-other'};
+  document.getElementById(map[type]||'tab-all').classList.add('active');
+  render();
+}
+
+function render(){
+  applyLang();renderStats();
+  const t=x();
+  const q=(document.getElementById('svc-search').value||'').toLowerCase();
+  const fs=document.getElementById('f-status').value;
+  let list=services.filter(s=>{
+    if(activeType&&s.service_type!==activeType)return false;
+    if(fs&&s.status!==fs)return false;
+    if(q&&![s.client_name||'',s.address||'',s.title||''].some(v=>v.toLowerCase().includes(q)))return false;
+    return true;
+  });
+
+  // TABLE
+  const tbody=document.getElementById('svc-tbody');
+  if(!list.length){
+    tbody.innerHTML=`<tr class="empty-row"><td colspan="8">${t.noJobs}</td></tr>`;
+  }else{
+    tbody.innerHTML=list.map(s=>`
+      <tr onclick="openEdit(${s.id})">
+        <td><span class="svc-type-badge ${s.service_type}">${t.types[s.service_type]||s.service_type}</span></td>
+        <td><strong>${san(s.client_name||'—')}</strong>${s.client_phone?`<div style="font-size:11px;color:var(--text3)">${san(s.client_phone)}</div>`:''}</td>
+        <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text2);font-size:12px">${san(s.address||'—')}</td>
+        <td style="color:var(--text2);font-size:12px">${s.scheduled_date||'—'}</td>
+        <td class="mono">${fmtMoney(s.price||0)}</td>
+        <td><span class="badge ${s.status}">${t.statuses[s.status]||s.status}</span></td>
+        <td style="color:var(--text3);font-size:12px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${san(s.notes||'—')}</td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <button class="btn sm" onclick="event.stopPropagation();openEdit(${s.id})"><i class="ti ti-edit"></i></button>
+            <button class="btn sm danger" onclick="event.stopPropagation();deleteSvc(${s.id})"><i class="ti ti-trash"></i></button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  // CARDS
+  const grid=document.getElementById('card-grid');
+  if(!list.length){
+    grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text3)">${t.noJobs}</div>`;
+  }else{
+    grid.innerHTML=list.map(s=>`
+      <div class="svc-card ${s.service_type}" onclick="openEdit(${s.id})">
+        <div class="svc-card-top">
+          <span class="svc-type-badge ${s.service_type}">${t.types[s.service_type]||s.service_type}</span>
+          <span class="badge ${s.status}">${t.statuses[s.status]||s.status}</span>
+        </div>
+        <div class="svc-client">${san(s.client_name||'—')}</div>
+        ${s.address?`<div class="svc-addr">📍 ${san(s.address)}</div>`:''}
+        ${s.notes?`<div style="font-size:11px;color:var(--text3);margin-bottom:4px">${san(s.notes)}</div>`:''}
+        <div class="svc-footer">
+          <span class="svc-price">${fmtMoney(s.price||0)}</span>
+          <span class="svc-date">${s.scheduled_date||''}</span>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function renderStats(){
+  const t=x();
+  const total=services.length;
+  const pending=services.filter(s=>s.status==='pending').length;
+  const progress=services.filter(s=>s.status==='in_progress').length;
+  const done=services.filter(s=>s.status==='completed').length;
+  const rev=services.filter(s=>s.status==='completed').reduce((sum,s)=>sum+(parseFloat(s.price)||0),0);
+  document.getElementById('stats').innerHTML=
+    `<div class="stat blue"><div class="stat-label">${t.statTotal}</div><div class="stat-val blue">${total}</div></div>`+
+    `<div class="stat amber"><div class="stat-label">${t.statPending}</div><div class="stat-val amber">${pending}</div></div>`+
+    `<div class="stat blue"><div class="stat-label">${t.statProgress}</div><div class="stat-val blue">${progress}</div></div>`+
+    `<div class="stat green"><div class="stat-label">${t.statDone}</div><div class="stat-val green">${done}</div></div>`+
+    `<div class="stat teal"><div class="stat-label">${t.statRev}</div><div class="stat-val teal" style="font-size:18px">${fmtMoney(rev)}</div></div>`;
+}
+
+function openAdd(){buildModal(null);}
+function openEdit(id){const s=services.find(x=>x.id===id);if(s)buildModal(s);}
+
+function buildModal(s){
+  const t=x();const isNew=!s;s=s||{};
+  document.getElementById('mc').innerHTML=`
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-head">
+        <span class="modal-title">🔧 ${isNew?t.addTitle:t.editTitle}</span>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label>${t.fType}</label>
+          <select id="m-type">
+            <option value="express_pickup"${s.service_type==='express_pickup'?' selected':''}>${t.types.express_pickup}</option>
+            <option value="demolition"${s.service_type==='demolition'?' selected':''}>${t.types.demolition}</option>
+            <option value="other"${s.service_type==='other'?' selected':''}>${t.types.other}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>${t.fTitle}</label>
+          <input id="m-title" value="${san(s.title||'')}" placeholder="${lang==='fr'?'Description courte…':'Short description…'}" maxlength="200">
+        </div>
+        <div class="section-sep">${t.fClient}</div>
+        <div class="field autocomplete-wrap">
+          <label>${t.fClient}</label>
+          <input id="m-client" value="${san(s.client_name||'')}" autocomplete="off" placeholder="${lang==='fr'?'Nom du client…':'Client name…'}">
+          <div id="client-ac-list" class="autocomplete-list" style="display:none"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>${t.fPhone}</label><input id="m-phone" value="${san(s.client_phone||'')}" placeholder="514 000-0000"></div>
+          <div class="field"><label>${t.fEmail}</label><input type="email" id="m-email" value="${san(s.client_email||'')}" placeholder="client@email.com"></div>
+        </div>
+        <div class="field autocomplete-wrap">
+          <label>${t.fAddr}</label>
+          <input id="m-addr" value="${san(s.address||'')}" placeholder="${lang==='fr'?'Adresse…':'Address…'}" autocomplete="off">
+        </div>
+        <div class="section-sep">${lang==='fr'?'Détails du travail':'Job Details'}</div>
+        <div class="field-row">
+          <div class="field"><label>${t.fPrice}</label><input type="number" id="m-price" value="${s.price||''}" min="0" step="0.01" placeholder="0.00"></div>
+          <div class="field"><label>${t.fDate}</label><input type="date" id="m-date" value="${san(s.scheduled_date||'')}"></div>
+        </div>
+        <div class="field">
+          <label>${t.fStatus}</label>
+          <select id="m-status">
+            <option value="pending"${s.status==='pending'?' selected':''}>${t.statuses.pending}</option>
+            <option value="in_progress"${s.status==='in_progress'?' selected':''}>${t.statuses.in_progress}</option>
+            <option value="completed"${s.status==='completed'?' selected':''}>${t.statuses.completed}</option>
+            <option value="cancelled"${s.status==='cancelled'?' selected':''}>${t.statuses.cancelled}</option>
+          </select>
+        </div>
+        <div class="field"><label>${t.fNotes}</label><textarea id="m-notes">${san(s.notes||'')}</textarea></div>
+      </div>
+      <div class="modal-foot">
+        ${!isNew?`<button class="btn danger" onclick="deleteSvc(${s.id})"><i class="ti ti-trash"></i></button>`:''}
+        <span style="flex:1"></span>
+        <button class="btn" onclick="closeModal()">${t.cancel}</button>
+        <button class="btn primary" id="save-btn" onclick="saveSvc(${s.id||'null'})"><i class="ti ti-check"></i> ${t.save}</button>
+      </div>
+    </div></div>`;
+  setupClientAC();
+  setTimeout(()=>initAddressAC('m-addr'),400);
+}
+
+function setupClientAC(){
+  const inp=document.getElementById('m-client');
+  const list=document.getElementById('client-ac-list');
+  if(!inp||!list)return;
+  inp.addEventListener('input',function(){
+    const q=this.value.toLowerCase().trim();
+    list.innerHTML='';
+    if(!q||!clients.length){list.style.display='none';return;}
+    const matches=clients.filter(c=>c.name.toLowerCase().includes(q)).slice(0,6);
+    if(!matches.length){list.style.display='none';return;}
+    list.style.display='block';
+    list._data=matches;
+    list.innerHTML=matches.map((c,i)=>
+      `<div class="autocomplete-item" onclick="selectClient(${i})">${san(c.name)}${c.phone?`<small>${san(c.phone)}</small>`:''}</div>`
+    ).join('');
+  });
+  document.addEventListener('click',e=>{if(inp&&list&&!inp.contains(e.target)&&!list.contains(e.target))list.style.display='none';});
+}
+
+function selectClient(i){
+  const list=document.getElementById('client-ac-list');
+  const c=list._data&&list._data[i];if(!c)return;
+  document.getElementById('m-client').value=c.name;
+  if(c.phone){const p=document.getElementById('m-phone');if(p)p.value=c.phone;}
+  if(c.email){const e=document.getElementById('m-email');if(e)e.value=c.email;}
+  if(c.address){const a=document.getElementById('m-addr');if(a)a.value=c.address;}
+  list.style.display='none';
+  toast(x().clientHint,'success',2000);
+}
+
+function initAddressAC(inputId){
+  const input=document.getElementById(inputId);
+  if(!input||input._acDone)return;
+  if(!window.google||!window.google.maps||!window.google.maps.places){setTimeout(()=>initAddressAC(inputId),400);return;}
+  input._acDone=true;
+  const ac=new google.maps.places.Autocomplete(input,{componentRestrictions:{country:['ca']},fields:['formatted_address']});
+  const b=new google.maps.LatLngBounds(new google.maps.LatLng(44.9,-79.5),new google.maps.LatLng(47.1,-71.1));
+  ac.setBounds(b);
+  ac.addListener('place_changed',function(){const p=ac.getPlace();if(p&&p.formatted_address)input.value=p.formatted_address;});
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')e.preventDefault();},{once:true});
+}
+
+async function saveSvc(id){
+  const t=x();
+  const btn=document.getElementById('save-btn');
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span>';}
+  const body={
+    service_type:document.getElementById('m-type').value,
+    title:document.getElementById('m-title').value.trim()||null,
+    client_name:document.getElementById('m-client').value.trim()||null,
+    client_phone:document.getElementById('m-phone').value.trim()||null,
+    client_email:document.getElementById('m-email').value.trim()||null,
+    address:document.getElementById('m-addr').value.trim()||null,
+    price:parseFloat(document.getElementById('m-price').value)||0,
+    scheduled_date:document.getElementById('m-date').value||null,
+    status:document.getElementById('m-status').value,
+    notes:document.getElementById('m-notes').value.trim()||null,
+    updated_at:new Date().toISOString(),
+  };
+  try{
+    if(id&&id!=='null'){await api('PATCH','services?id=eq.'+id,body);}
+    else{body.created_at=new Date().toISOString();await api('POST','services',body);}
+    toast(t.saved,'success');closeModal();await loadAll();
+  }catch(e){
+    toast(t.err+e.message,'error',4000);
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> '+t.save;}
+  }
+}
+
+async function deleteSvc(id){
+  if(!confirm(lang==='fr'?'Supprimer ce travail ?':'Delete this job?'))return;
+  try{
+    await api('DELETE','services?id=eq.'+id);
+    toast(x().deleted,'success');closeModal();await loadAll();
+  }catch(e){toast(x().err+e.message,'error');}
+}
+
+function closeModal(){document.getElementById('mc').innerHTML='';}
+function san(s){if(typeof s!=='string')return '';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtMoney(n){return'$'+(parseFloat(n)||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+function toast(msg,type,dur){dur=dur||2500;const el=document.getElementById('toast');el.textContent=msg;el.className='toast show'+(type?' '+type:'');clearTimeout(el._t);el._t=setTimeout(()=>el.className='toast',dur);}
+
+document.getElementById('btn-fr').className='lang-btn'+(lang==='fr'?' active':'');
+document.getElementById('btn-en').className='lang-btn'+(lang==='en'?' active':'');
+applyLang();loadAll();
+setInterval(loadAll,30000);
+</script>
+</body>
+</html>
