@@ -159,15 +159,34 @@ body{font-family:var(--font);background:#f0f2f0;color:#1a2e1a;min-height:100vh;f
 .footer-right{font-size:11px;color:var(--green3);display:flex;align-items:center;gap:5px}
 @media(max-width:768px){.navbar{padding:0 1rem}.body{padding:1rem}.nav-title{display:none}.cal-cell{min-height:60px}}
 /* ── MOBILE BOTTOM TAB BAR ── */
-.bottom-tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--navy);border-top:1px solid var(--border2);z-index:150;height:60px;padding:0 4px;padding-bottom:env(safe-area-inset-bottom)}
-.bottom-tab-bar a,.bottom-tab-bar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:var(--text3);font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:none;border:none;cursor:pointer;font-family:var(--font);padding:6px 2px;transition:color .15s;-webkit-tap-highlight-color:transparent}
-.bottom-tab-bar a.active,.bottom-tab-bar button.active{color:var(--green3)}
-.bottom-tab-bar a:hover,.bottom-tab-bar button:hover{color:var(--text2)}
-.bottom-tab-icon{font-size:20px;line-height:1}
+.bottom-tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--navy);border-top:1px solid var(--border2);z-index:150;height:60px;padding:0 2px;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-tab-bar a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;color:var(--text3);font-size:8px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:6px 2px;transition:color .15s;-webkit-tap-highlight-color:transparent;min-width:0}
+.bottom-tab-bar a.active{color:var(--green3)}
+.bottom-tab-icon{font-size:18px;line-height:1}
 @media(max-width:768px){
   .bottom-tab-bar{display:flex}
-  .body{padding-bottom:72px}
-  .navbar .nav-btn:not(.primary){display:none}
+  .body{padding:1rem;padding-bottom:72px}
+  .navbar{padding:0 12px}
+  /* Hide desktop nav links only — keep logo, title, lang toggle, primary btn */
+  .navbar a.nav-btn:not(.primary){display:none}
+  .db-dot,#db-label{display:none}
+  .toolbar-sep{display:none}
+}
+
+/* ── MOBILE WEEK VIEW ── */
+@media(max-width:768px){
+  .cal-cell{min-height:70px;padding:4px}
+  .cal-event{font-size:9px;padding:1px 4px}
+  .layout{grid-template-columns:1fr}
+  .side-panel{position:static}
+  /* Week view on mobile */
+  .mobile-week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;background:#fff;border:1px solid #d8e0d8;border-radius:var(--r2);padding:8px 12px}
+  .mobile-week-nav button{background:var(--green);border:none;color:#fff;cursor:pointer;width:32px;height:32px;border-radius:50%;font-size:18px;display:flex;align-items:center;justify-content:center}
+  .mobile-week-label{font-size:13px;font-weight:600;color:#1a2e1a}
+}
+@media(min-width:769px){
+  .mobile-week-nav{display:none}
+  .cal-days-header,.cal-grid{display:grid !important}
 }
 </style>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTXhNFj1REWyHjBpC4-qASfGRFjXlsGdQ&libraries=places" async defer></script>
@@ -353,8 +372,62 @@ function getAllEvents(){
   return all;
 }
 
+
+// ── MOBILE WEEK VIEW ─────────────────────────────────────────────────────────
+let mobileWeekStart = getMonday(new Date());
+
+function getMonday(d){
+  const dt=new Date(d);
+  const day=dt.getDay();
+  const diff=dt.getDate()-day+(day===0?-6:1);
+  dt.setDate(diff);dt.setHours(0,0,0,0);return dt;
+}
+function addDaysDate(d,n){const dt=new Date(d);dt.setDate(dt.getDate()+n);return dt;}
+function dateStr(d){return d.toISOString().slice(0,10);}
+
+function isMobile(){return window.innerWidth<=768;}
+
+function changeMobileWeek(dir){
+  mobileWeekStart=addDaysDate(mobileWeekStart,dir*7);
+  renderCalendar();
+}
+
+function renderMobileWeekView(){
+  const t=x();
+  const end=addDaysDate(mobileWeekStart,6);
+  document.getElementById('mobile-week-label').textContent=
+    dateStr(mobileWeekStart).slice(5)+' → '+dateStr(end).slice(5);
+  document.getElementById('mobile-week-nav').style.display='flex';
+  
+  // Only show 7 days (this week)
+  const today=new Date().toISOString().slice(0,10);
+  const allEvts=getAllEvents();
+  const days=[];
+  for(let i=0;i<7;i++) days.push(addDaysDate(mobileWeekStart,i));
+  
+  // Override the grid to show only this week's 7 days
+  const header=document.getElementById('cal-days-header');
+  const grid=document.getElementById('cal-grid');
+  
+  header.innerHTML=days.map(d=>`<div class="cal-day-name">${t.days[d.getDay()]}<div style="font-size:9px;opacity:.8">${dateStr(d).slice(5)}</div></div>`).join('');
+  
+  grid.innerHTML=days.map(d=>{
+    const ds=dateStr(d);
+    const isToday=ds===today;
+    const dayEvts=allEvts.filter(e=>e.event_date===ds);
+    const evtHtml=dayEvts.slice(0,4).map(e=>`<div class="cal-event ${e.event_type}" onclick="event.stopPropagation();selectDay('${ds}')">${san(e.title)}</div>`).join('');
+    const more=dayEvts.length>4?`<div class="cal-more">+${dayEvts.length-4}</div>`:'';
+    return `<div class="cal-cell${isToday?' today':''}" onclick="selectDay('${ds}')">
+      <div class="cal-date">${d.getDate()}</div>
+      ${evtHtml}${more}
+    </div>`;
+  }).join('');
+}
+
 function renderCalendar(){
   const t=x();
+  if(isMobile()){renderMobileWeekView();return;}
+  document.getElementById('mobile-week-nav').style.display='none';
   document.getElementById('cal-month-label').textContent=t.months[curMonth]+' '+curYear;
   // Day headers
   document.getElementById('cal-days-header').innerHTML=t.days.map(d=>`<div class="cal-day-name">${d}</div>`).join('');
@@ -560,6 +633,7 @@ function toast(msg,type,dur){dur=dur||2500;const el=document.getElementById('toa
 document.getElementById('btn-fr').className='lang-btn'+(lang==='fr'?' active':'');
 document.getElementById('btn-en').className='lang-btn'+(lang==='en'?' active':'');
 applyLang();loadAll();
+window.addEventListener('resize',()=>renderCalendar());
 setInterval(loadAll,30000);
 </script>
 

@@ -179,23 +179,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .footer-left{font-size:11px;color:var(--text3)}
 .footer-right{font-size:11px;color:var(--green3);display:flex;align-items:center;gap:5px}
 
-@media(max-width:768px){
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .nav-cards{grid-template-columns:1fr}
-  .navbar{padding:0 1rem}
-  .body{padding:1rem}
-  .nav-title{display:none}
-}
 /* ── MOBILE BOTTOM TAB BAR ── */
-.bottom-tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--navy);border-top:1px solid var(--border2);z-index:150;height:60px;padding:0 4px;padding-bottom:env(safe-area-inset-bottom)}
-.bottom-tab-bar a,.bottom-tab-bar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:var(--text3);font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:none;border:none;cursor:pointer;font-family:var(--font);padding:6px 2px;transition:color .15s;-webkit-tap-highlight-color:transparent}
-.bottom-tab-bar a.active,.bottom-tab-bar button.active{color:var(--green3)}
-.bottom-tab-bar a:hover,.bottom-tab-bar button:hover{color:var(--text2)}
-.bottom-tab-icon{font-size:20px;line-height:1}
+.bottom-tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--navy);border-top:1px solid var(--border2);z-index:150;height:60px;padding:0 2px;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-tab-bar a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;color:var(--text3);font-size:8px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:6px 2px;transition:color .15s;-webkit-tap-highlight-color:transparent;min-width:0}
+.bottom-tab-bar a.active{color:var(--green3)}
+.bottom-tab-icon{font-size:18px;line-height:1}
 @media(max-width:768px){
   .bottom-tab-bar{display:flex}
-  .body{padding-bottom:72px}
-  .navbar .nav-btn:not(.primary){display:none}
+  .body{padding:1rem;padding-bottom:72px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .nav-cards{grid-template-columns:1fr}
+  .navbar{padding:0 12px}
+  /* Hide all nav-btns that are plain links, keep lang toggle and refresh */
+  .navbar a.nav-btn{display:none}
+  .db-dot,.db-label{display:none}
+  .nav-title{display:block}
 }
 </style>
 </head>
@@ -533,7 +531,7 @@ function renderUpcoming(){
   if(!el)return;
   if(!upcoming.length){el.innerHTML=`<div class="empty-panel">${lang==='fr'?'Aucune tâche à venir.':'No upcoming tasks.'}</div>`;return;}
   el.innerHTML=upcoming.slice(0,8).map(u=>`
-    <div class="schedule-item">
+    <div class="schedule-item" style="cursor:pointer">
       <span class="sched-dot" style="background:${u.color}"></span>
       <div class="sched-info">
         <div class="sched-title">${u.icon} ${san(u.title)}</div>
@@ -551,10 +549,8 @@ function renderStats(){
   const unpaid=invoices.filter(i=>(i.status||'').toLowerCase()==='unpaid').length;
   const totalClients=clients.length;
   const mkStat=(color,label,val,filter)=>{
-    const href=filter?`container-tracking/?status=${filter}`:'';
-    const tag=href?'a':'div';
-    const extra=href?`href="${href}" style="text-decoration:none;display:block;cursor:pointer" title="View ${filter} containers"`:'';
-    return `<${tag} class="stat ${color}" ${extra}><div class="stat-label">${label}</div><div class="stat-val ${color}">${val}</div></${tag}>`;
+    const href=filter?`container-tracking/?status=${filter}`:'container-tracking/';
+    return `<a href="${href}" class="stat ${color}" style="text-decoration:none;display:block;cursor:pointer"><div class="stat-label">${label}</div><div class="stat-val ${color}">${val}</div></a>`;
   };
   document.getElementById('stats').innerHTML=
     mkStat('blue',t.statContainers,total,'')+
